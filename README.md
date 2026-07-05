@@ -1,3 +1,3 @@
-# Crypto Scanner Pro V10.1 AI Engine
+# Crypto Scanner Pro V10.2 Quant Engine
 
-Version-visible build with /api/version.
+Adds Expected Value, Win Probability, Signal Quality, Max Risk %, Quant Grade.
