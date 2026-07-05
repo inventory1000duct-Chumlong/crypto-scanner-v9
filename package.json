@@ -1,6 +1,6 @@
 {
-  "name": "crypto-scanner-v9-hedge-fund",
-  "version": "9.0.0",
+  "name": "crypto-scanner-v10-ai-engine",
+  "version": "10.1.0",
   "type": "module",
   "scripts": {
     "start": "node server.js"
