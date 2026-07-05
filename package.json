@@ -1,6 +1,6 @@
 {
-  "name": "crypto-scanner-v10-emergency-cache-fix",
-  "version": "10.2.2",
+  "name": "crypto-scanner-v10-enterprise-stable",
+  "version": "10.3.0",
   "type": "module",
   "scripts": {
     "start": "node server.js"
