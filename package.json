@@ -1,6 +1,6 @@
 {
-  "name": "crypto-scanner-v10-enterprise-stable",
-  "version": "10.3.0",
+  "name": "crypto-scanner-v10-professional-complete",
+  "version": "10.4.0",
   "type": "module",
   "scripts": {
     "start": "node server.js"
