@@ -1,11 +1,14 @@
-# Crypto Scanner Pro V10.4 Professional Complete
+# Crypto Scanner Pro V12.0 Hedge Fund Terminal
 
-เพิ่มจาก V10.3:
-- Portfolio Risk Dashboard
-- Watchlist ใช้ localStorage
-- Export CSV
-- Summary Box
-- Trade Plan/Position View
-- Version V10.4 Professional Complete
+Major release:
+- Professional Terminal Dashboard
+- Futures Engine
+- On-chain / Smart Money Proxy
+- AI Chat endpoint `/api/ai-chat`
+- Backtest Proxy
+- Alerts
+- Portfolio Manager
+- CSV Export
+- Health / Cache / Diagnostics
 
-อัปโหลดทับ repo ที่ Railway ผูกจริง แล้ว Commit changes
+หมายเหตุ: On-chain/Futures/Backtest เป็น Proxy Engine จากข้อมูล public market data เพื่อคัดกรองเบื้องต้น ไม่ใช่ข้อมูล on-chain/futures exchange จริงแบบ paid API

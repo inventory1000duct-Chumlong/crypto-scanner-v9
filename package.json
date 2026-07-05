@@ -1,6 +1,6 @@
 {
-  "name": "crypto-scanner-v10-professional-complete",
-  "version": "10.4.0",
+  "name": "crypto-scanner-v12-hedge-fund-terminal",
+  "version": "12.0.0",
   "type": "module",
   "scripts": {
     "start": "node server.js"
