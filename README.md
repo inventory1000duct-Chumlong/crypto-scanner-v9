@@ -1,3 +1,3 @@
-# Crypto Scanner Pro V10.2 Quant Engine
+# Crypto Scanner Pro V10.2.1 Quant Engine Hotfix
 
-Adds Expected Value, Win Probability, Signal Quality, Max Risk %, Quant Grade.
+Fixes frontend JS error: Identifier 'top' has already been declared.

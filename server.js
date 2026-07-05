@@ -7,10 +7,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const PRODUCT="Crypto Scanner Pro";
-const VERSION="10.2.0";
-const EDITION="Quant Engine";
-const BUILD="2026.07.05";
-const API_VERSION="10.2.0-quant-engine";
+const VERSION="10.2.1";
+const EDITION="Quant Engine Hotfix";
+const BUILD="2026.07.05-HF1";
+const API_VERSION="10.2.1-quant-engine-hotfix";
 const PORT=process.env.PORT||3000;
 
 const __filename=fileURLToPath(import.meta.url);
@@ -24,7 +24,6 @@ app.use(express.static(path.join(__dirname,"public")));
 const cache=new Map(), lastGood=new Map();
 const CG="https://api.coingecko.com/api/v3";
 const FNG="https://api.alternative.me/fng/?limit=1";
-const now=()=>new Date().toISOString();
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const round=(n,d=2)=>{const p=10**d;return Math.round(n*p)/p};
@@ -35,7 +34,7 @@ const gradeRank=g=>({"A+":5,A:4,B:3,C:2,D:1}[g]||0);
 
 async function fetchText(url,timeout=12000){
   const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),timeout);
-  try{const res=await fetch(url,{signal:ctrl.signal,headers:{"accept":"application/json,text/plain,*/*","user-agent":"Mozilla/5.0 crypto-scanner-v10.2"}});return{ok:res.ok,status:res.status,text:await res.text()};}
+  try{const res=await fetch(url,{signal:ctrl.signal,headers:{"accept":"application/json,text/plain,*/*","user-agent":"Mozilla/5.0 crypto-scanner-v10.2.1"}});return{ok:res.ok,status:res.status,text:await res.text()};}
   finally{clearTimeout(timer)}
 }
 async function resilientJSON(key,url,opt={}){
@@ -80,7 +79,7 @@ function decision(g,conf,regime,ev){if(ev<0)return"Avoid";if(regime.risk==="HIGH
 function position(entry,sl,riskPct,capital=10000){const riskAmount=capital*(riskPct/100),riskPerUnit=Math.max(entry-sl,entry*.002),qty=riskAmount/riskPerUnit;return{capital,riskPct,riskAmount:round(riskAmount,2),qty:round(qty,6),positionValue:round(qty*entry,2)}}
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
 
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V10.2 Quant Engine",status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V10.2.1 Quant Engine Hotfix",status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),services})});
 app.get("/api/scan",async(req,res,next)=>{try{const limit=clamp(parseInt(req.query.limit||"50",10)||50,10,100),pack=await getCoins(limit),fng=await getFng(),coins=pack.coins,avg24=avg(coins.map(x=>x.change24h)),medAbs=median(coins.map(x=>Math.abs(x.change24h))),reg=marketRegime(avg24,medAbs,fng.value),sectors=buildSectors(coins),secMap=Object.fromEntries(sectors.map(x=>[x.sector,x.strength])),medVol=median(coins.map(x=>x.volume)),volumes=coins.map(x=>x.volume),momentums=coins.map(x=>x.change24h+x.change7d*.35),liquidities=coins.map(x=>x.marketCap||x.volume),providerQuality=pack.source.includes("DemoFallback")?45:pack.source.includes("stale")?70:90;const rows=coins.map(coin=>{const p=tradePlan(coin),volRatio=medVol?Math.max(.1,coin.volume/medVol):1,sec=sectorOf(coin),momentum=coin.change24h+coin.change7d*.35,comps=components({coin,volRatio,rr:p.rr,regime:reg,sectorStrength:secMap[sec]||50,fear:fng.value,liquidityPct:pct(liquidities,coin.marketCap||coin.volume),momentumPct:pct(momentums,momentum),volumePct:pct(volumes,coin.volume)}),penalties=[];if(coin.change24h>=10)penalties.push("ราคาวิ่งแรงเกิน ระวังไล่ราคา");if(coin.change24h<-6)penalties.push("Momentum อ่อน");if(reg.risk==="HIGH")penalties.push("Market Regime เสี่ยงสูง");if(p.rr<1.75)penalties.push("R:R ต่ำ");const ai=aiScore(comps),conf=confidence({score:ai.score,comps,penalties,providerQuality}),qm=quantMetrics({score:ai.score,conf,rr:p.rr,volatility:p.volatility,regime:reg,components:comps}),g=grade({score:ai.score,conf,rr:p.rr,volRatio,regime:reg,riskScore:comps.risk,ev:qm.expectedValue}),pos=position(p.entryHigh,p.sl,qm.maxRiskPct);return{symbol:coin.symbol,name:coin.name,sector:sec,price:coin.price,rank:coin.rank,change24h:round(coin.change24h,2),change7d:round(coin.change7d,2),volume:coin.volume,marketCap:coin.marketCap,volumeRatio:round(volRatio,2),score:ai.score,confidence:conf,grade:g,decision:decision(g,conf,reg,qm.expectedValue),quant:qm,xai:ai.xai,components:comps,reasons:ai.xai.slice(0,4).map(x=>`${x.component} +${x.contribution}`),penalties,rr:round(p.rr,2),volatility:round(p.volatility,2),atr:round(p.atr,8),entryLow:round(p.entryLow,8),entryHigh:round(p.entryHigh,8),sl:round(p.sl,8),tp1:round(p.tp1,8),tp2:round(p.tp2,8),tp3:round(p.tp3,8),position:pos}}).sort((a,b)=>gradeRank(b.grade)-gradeRank(a.grade)||b.quant.signalQuality-a.quant.signalQuality||b.confidence-a.confidence);res.json({ok:true,product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,source:pack.source,time:new Date().toISOString(),diagnostics:pack.diagnostics,market:{regime:reg.name,risk:reg.risk,multiplier:reg.multiplier,fng:fng.value,avg24:round(avg24,2),medAbs:round(medAbs,2)},sectors,topOpportunity:rows[0]||null,rows})}catch(e){next(e)}});
 app.get("/api/debug",(req,res)=>res.json({ok:true,product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,cacheKeys:[...cache.keys()],lastGoodKeys:[...lastGood.keys()],time:new Date().toISOString()}));

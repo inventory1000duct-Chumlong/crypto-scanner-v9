@@ -1,6 +1,6 @@
 {
   "name": "crypto-scanner-v10-quant-engine",
-  "version": "10.2.0",
+  "version": "10.2.1",
   "type": "module",
   "scripts": {
     "start": "node server.js"
