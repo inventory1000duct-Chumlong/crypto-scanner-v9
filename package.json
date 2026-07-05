@@ -1,6 +1,6 @@
 {
-  "name": "crypto-scanner-v10-quant-engine",
-  "version": "10.2.1",
+  "name": "crypto-scanner-v10-emergency-cache-fix",
+  "version": "10.2.2",
   "type": "module",
   "scripts": {
     "start": "node server.js"

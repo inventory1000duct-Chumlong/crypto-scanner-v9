@@ -1,3 +1,3 @@
-# Crypto Scanner Pro V10.2.1 Quant Engine Hotfix
+# Crypto Scanner Pro V10.2.2 Emergency Cache Fix
 
-Fixes frontend JS error: Identifier 'top' has already been declared.
+Use repo linked to Railway. New JS filename: public/app-v10-2-2.js
