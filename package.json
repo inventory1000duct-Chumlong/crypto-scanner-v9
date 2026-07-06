@@ -1,6 +1,6 @@
 {
-  "name": "crypto-scanner-v15-portfolio-candlestick-tp",
-  "version": "15.7.0",
+  "name": "crypto-scanner-v16-professional-trading-terminal",
+  "version": "16.0.0",
   "type": "module",
   "scripts": {
     "start": "node server.js"

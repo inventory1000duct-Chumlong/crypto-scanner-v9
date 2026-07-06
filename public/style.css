@@ -10,3 +10,17 @@ body{margin:0;background:#06101f;color:#e6edf7;font-family:Arial,sans-serif}head
 .tpitem span{display:block;color:#8291ad;font-size:11px}
 .tpitem b{display:block;margin-top:4px;color:#93c5fd}
 @media(max-width:900px){.chartgrid{grid-template-columns:1fr}.tpbox{grid-template-columns:1fr}}
+
+.chartgrid.v16{grid-template-columns:1fr}
+.chartcard.v16{display:grid;grid-template-columns:minmax(520px,1fr) 320px;gap:14px;align-items:start}
+.chartpanel{background:#0b1324;border:1px solid #26354f;border-radius:12px;padding:12px}
+.levelrow{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid rgba(38,53,79,.55);padding:8px 0;font-size:13px}
+.levelrow:last-child{border-bottom:0}
+.levelrow b{font-size:13px}
+.level-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.pnl-pos{color:#6bff9d!important}.pnl-neg{color:#fb7185!important}
+.portfolio-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:14px 0}
+.portfolio-kpi{background:rgba(255,255,255,.04);border:1px solid #26354f;border-radius:12px;padding:12px;text-align:center}
+.portfolio-kpi span{display:block;color:#8291ad;font-size:11px}
+.portfolio-kpi b{display:block;margin-top:6px;font-size:18px}
+@media(max-width:1100px){.chartcard.v16{grid-template-columns:1fr}.portfolio-kpis{grid-template-columns:repeat(2,1fr)}}

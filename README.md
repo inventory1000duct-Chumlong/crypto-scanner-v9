@@ -1,11 +1,12 @@
-# Crypto Scanner Pro V15.7 Portfolio Candlestick TP
+# Crypto Scanner Pro V16 Professional Trading Terminal
 
-เพิ่มจาก V15.6:
-- กราฟแท่งเทียนจำลองในหน้า Portfolio P/L
-- เส้น Avg / Current / SL / TP1 / TP2 / TP3
-- แสดงเป้า TP1 / TP2 / TP3 รายเหรียญ
-- คำนวณกำไรเป้าหมายที่ TP1 / TP2 / TP3
-- ตารางพอร์ตเพิ่ม SL และ TP
-- Export Portfolio CSV รวม SL/TP
+เพิ่มจาก V15.7:
+- แก้กราฟแท่งเทียนไม่ให้ตัวเลข TP/SL ซ้อนกับแท่งเทียน
+- ย้าย TP/SL/AVG/NOW/ENTRY ไปไว้ใน Panel ด้านขวา
+- เพิ่มตัวเลือกสกุลเงิน THB / USD
+- เพิ่ม API /api/fx สำหรับ USDTHB พร้อม fallback
+- แสดงค่าเงินบาททั้ง Portfolio, P/L, SL, TP
+- เพิ่ม Portfolio Analytics: Current Value, Cost, Total P/L, ROI, Best/Worst
+- ตารางพอร์ตละเอียดขึ้น
 
-หมายเหตุ: กราฟแท่งเทียนเป็นกราฟจำลองจากข้อมูลราคา 24h และราคาปัจจุบัน ไม่ใช่ OHLC จริงจาก Exchange
+หมายเหตุ: กราฟยังเป็นกราฟจำลองจากข้อมูล 24h และราคาปัจจุบัน ไม่ใช่ OHLC จริงจาก Exchange

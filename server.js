@@ -6,7 +6,7 @@ import compression from "compression";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const PRODUCT="Crypto Scanner Pro", VERSION="15.7.0", EDITION="Portfolio Candlestick TP", BUILD="2026.07.06-TP1", API_VERSION="15.7.0-portfolio-candlestick-tp";
+const PRODUCT="Crypto Scanner Pro", VERSION="16.0.0", EDITION="Professional Trading Terminal", BUILD="2026.07.06-V16", API_VERSION="16.0.0-professional-trading-terminal";
 const PORT=process.env.PORT||3000;
 const __filename=fileURLToPath(import.meta.url), __dirname=path.dirname(__filename);
 const app=express();
@@ -101,10 +101,21 @@ async function terminalPayload(limit=80){
  return {ok:true,product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,source:pack.source,dataQuality:pack.dataQuality,cache:cacheMeta(),time:new Date().toISOString(),diagnostics:pack.diagnostics,market,sectors,summary:summary(rows,sectors,market),terminal:{alerts:rows.slice(0,10).map(x=>({symbol:x.symbol,type:x.decisionAI.action,message:x.decisionAI.tradeBrief}))},topOpportunity:rows[0]||null,rows};
 }
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V15.7 Portfolio Candlestick TP",modules:["Portfolio Candlestick","TP Targets","Personal Portfolio","P/L Dashboard","Decision Matrix","Explainable AI","Risk Triggers","AI Trade Brief"],status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V16 Professional Trading Terminal",modules:["Professional Portfolio","Currency THB/USD","Clean Candlestick","TP Panel","Position Analytics","Decision Intelligence","Explainable AI"],status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),cache:cacheMeta(),services})});
 app.get("/api/terminal",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"80",10)||80,20,100)))}catch(e){next(e)}});
 app.get("/api/scan",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"50",10)||50,10,100)))}catch(e){next(e)}});
 app.post("/api/ai-chat",async(req,res)=>{const q=String(req.body?.q||"").toUpperCase();const payload=await terminalPayload(60);const sym=(q.match(/[A-Z]{2,6}/)||[])[0];const row=sym?payload.rows.find(x=>x.symbol===sym):payload.topOpportunity;const answer=row?`${row.decisionAI.tradeBrief}\n\nDrivers: ${row.decisionAI.drivers.map(d=>`${d.factor} ${d.score}`).join(", ")}\nBlockers: ${row.decisionAI.blockers.join(", ")||"ไม่มีจุดเสี่ยงหลัก"}\nChecklist: ${row.decisionAI.entryChecklist.join(" | ")}`:`ตลาดตอนนี้ ${payload.market.regime}, Risk ${payload.market.risk}, Top คือ ${payload.topOpportunity?.symbol||"-"}`;res.json({ok:true,version:API_VERSION,question:req.body?.q||"",answer,row:row||null,time:new Date().toISOString()})});
+
+app.get("/api/fx",async(req,res)=>{
+  let rate=36.5, source="fallback";
+  try{
+    const r=await resilientJSON("fx_usd_thb","https://open.er-api.com/v6/latest/USD",{ttl:3600000,stale:86400000,retries:1,timeout:8000});
+    const thb=+(r.data?.rates?.THB||0);
+    if(thb>20&&thb<60){rate=thb;source=r.source||"live";}
+  }catch(e){}
+  res.json({ok:true,pair:"USDTHB",rate:round(rate,4),source,version:API_VERSION,time:new Date().toISOString()});
+});
+
 app.use((err,req,res,next)=>res.status(500).json({ok:false,error:err.message||String(err),version:API_VERSION,build:BUILD,time:new Date().toISOString()}));
 app.listen(PORT,()=>console.log(`${PRODUCT} ${VERSION} ${EDITION} running on port ${PORT}`));
