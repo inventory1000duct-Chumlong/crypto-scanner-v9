@@ -6,7 +6,7 @@ import compression from "compression";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const PRODUCT="Crypto Scanner Pro", VERSION="17.0.0", EDITION="AI Trading Workspace", BUILD="2026.07.06-V17", API_VERSION="17.0.0-ai-trading-workspace";
+const PRODUCT="Crypto Scanner Pro", VERSION="18.0.0", EDITION="Professional Trading Terminal", BUILD="2026.07.06-V18", API_VERSION="18.0.0-professional-trading-terminal";
 const PORT=process.env.PORT||3000;
 const __filename=fileURLToPath(import.meta.url), __dirname=path.dirname(__filename);
 const app=express();
@@ -82,6 +82,43 @@ function decisionIntelligence(row,market){
 }
 function backtestProxy(row){const expected30=round(row.quant.expectedValue*18 + row.change7d*.7,2); const maxDD=round(Math.max(4,row.volatility*1.35),2); return {expected30dPct:expected30,maxDrawdownPct:maxDD,sharpeProxy:round((row.quant.expectedValue+0.2)/(maxDD/20),2)}}
 function summary(rows,sectors,market){return {buyCount:rows.filter(x=>["A+","A"].includes(x.grade)).length,watchCount:rows.filter(x=>x.grade==="B").length,avoidCount:rows.filter(x=>["C","D"].includes(x.grade)).length,topSymbols:rows.slice(0,5).map(x=>x.symbol),bestSector:sectors[0]?.sector||"-",marketRisk:market.risk,summaryText:`ตลาด ${market.regime} / Top ${rows[0]?.symbol||"-"} / Sector เด่น ${sectors[0]?.sector||"-"}`}}
+
+function technicalEngine(row, market){
+  const px=row.price||1;
+  const c24=row.change24h||0, c7=row.change7d||0;
+  const trendScore=clamp(Math.round(50+c7*3+c24*2),0,100);
+  const ema20=round(px*(1-(c24/100)*0.18),8);
+  const ema50=round(px*(1-(c7/100)*0.10),8);
+  const ema200=round(px*(1-(c7/100)*0.28),8);
+  const rsi=clamp(Math.round(50+c24*3+c7*0.8),5,95);
+  const macd=round((ema20-ema50)/px*100,3);
+  const atrPct=round(Math.max(row.volatility||0, Math.abs(c24), 2),2);
+  const bbWidth=round(atrPct*1.65,2);
+  const trend=ema20>ema50&&ema50>ema200?"BULL":ema20<ema50&&ema50<ema200?"BEAR":"MIXED";
+  const momentum=rsi>=70?"OVERBOUGHT":rsi<=30?"OVERSOLD":rsi>=55?"BULLISH":rsi<=45?"BEARISH":"NEUTRAL";
+  const signalScore=clamp(Math.round(row.score*.35+row.confidence*.25+trendScore*.2+(rsi>=45&&rsi<=68?15:5)+(macd>0?8:0)),0,100);
+  return {ema20,ema50,ema200,rsi,macd,atrPct,bbWidth,trend,momentum,trendScore,signalScore,summary:`Trend ${trend}, RSI ${rsi}, MACD ${macd>0?"positive":"negative"}, ATR ${atrPct}%`};
+}
+function timeframeSignal(row){
+  const base=row.technical?.signalScore||row.score||50;
+  const vol=row.volatility||3;
+  const mk=(tf,adj)=> {
+    const s=clamp(Math.round(base+adj-(vol>12?8:0)),0,100);
+    const sig=s>=80?"STRONG_BUY":s>=68?"BUY":s>=52?"NEUTRAL":s>=40?"SELL":"STRONG_SELL";
+    return {tf,score:s,signal:sig};
+  };
+  return [mk("5m",(row.change24h||0)>0?4:-4),mk("15m",(row.change24h||0)>1?6:-3),mk("1h",(row.change24h||0)*.8),mk("4h",(row.change7d||0)*.45),mk("1D",(row.change7d||0)*.25),mk("1W",row.sector==="Major"?3:0)];
+}
+function marketBreadth(rows){
+  const up=rows.filter(x=>x.change24h>0).length, down=rows.filter(x=>x.change24h<0).length;
+  const total=rows.length||1;
+  const a=avg(rows.map(x=>x.change24h));
+  return {up,down,flat:total-up-down,upPct:round(up/total*100,1),downPct:round(down/total*100,1),avgChange24h:round(a,2),mode:up/total>.6?"BROAD_RISK_ON":down/total>.6?"BROAD_RISK_OFF":"MIXED"};
+}
+function heatmapData(rows){
+  return rows.slice(0,36).map(x=>({symbol:x.symbol,name:x.name,sector:x.sector,change24h:x.change24h,score:x.score,grade:x.grade,size:Math.max(1,Math.log10((x.marketCap||x.volume||1)+10)),decision:x.decisionAI?.action||x.decision}));
+}
+
 async function terminalPayload(limit=80){
  const pack=await getCoins(limit), fng=await getFng(), coins=pack.coins;
  const avg24=avg(coins.map(x=>x.change24h)), medAbs=median(coins.map(x=>Math.abs(x.change24h))), reg=marketRegime(avg24,medAbs,fng.value);
@@ -96,12 +133,12 @@ async function terminalPayload(limit=80){
   const ai=aiScore(comps), conf=confidence({score:ai.score,comps,penalties,providerQuality}), qm=quantMetrics({score:ai.score,conf,rr:p.rr,volatility:p.volatility,regime:reg,components:comps});
   const g=grade({score:ai.score,conf,rr:p.rr,volRatio,regime:reg,riskScore:comps.risk,ev:qm.expectedValue}), pos=position(p.entryHigh,p.sl,qm.maxRiskPct);
   const row={symbol:coin.symbol,name:coin.name,sector:sec,price:coin.price,rank:coin.rank,change24h:round(coin.change24h,2),change7d:round(coin.change7d,2),volume:coin.volume,marketCap:coin.marketCap,volumeRatio:round(volRatio,2),score:ai.score,confidence:conf,grade:g,decision:decision(g,conf,reg,qm.expectedValue),quant:qm,xai:ai.xai,components:comps,reasons:ai.xai.slice(0,4).map(x=>`${x.component} +${x.contribution}`),penalties,rr:round(p.rr,2),volatility:round(p.volatility,2),atr:round(p.atr,8),entryLow:round(p.entryLow,8),entryHigh:round(p.entryHigh,8),sl:round(p.sl,8),tp1:round(p.tp1,8),tp2:round(p.tp2,8),tp3:round(p.tp3,8),position:pos};
-  row.futures=futuresMetrics(row); row.onchain=onchainProxy(row); row.backtest=backtestProxy(row); row.decisionAI=decisionIntelligence(row,market); return row;
+  row.futures=futuresMetrics(row); row.onchain=onchainProxy(row); row.backtest=backtestProxy(row); row.technical=technicalEngine(row,market); row.timeframes=timeframeSignal(row); row.decisionAI=decisionIntelligence(row,market); return row;
  }).sort((a,b)=>b.decisionAI.decisionScore-a.decisionAI.decisionScore||gradeRank(b.grade)-gradeRank(a.grade)||b.confidence-a.confidence);
- return {ok:true,product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,source:pack.source,dataQuality:pack.dataQuality,cache:cacheMeta(),time:new Date().toISOString(),diagnostics:pack.diagnostics,market,sectors,summary:summary(rows,sectors,market),terminal:{alerts:rows.slice(0,10).map(x=>({symbol:x.symbol,type:x.decisionAI.action,message:x.decisionAI.tradeBrief}))},topOpportunity:rows[0]||null,rows};
+ return {ok:true,product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,source:pack.source,dataQuality:pack.dataQuality,cache:cacheMeta(),time:new Date().toISOString(),diagnostics:pack.diagnostics,market,sectors,summary:summary(rows,sectors,market),terminal:{breadth:marketBreadth(rows),heatmap:heatmapData(rows),technicalLeaders:rows.slice().sort((a,b)=>(b.technical?.signalScore||0)-(a.technical?.signalScore||0)).slice(0,10).map(x=>({symbol:x.symbol,score:x.technical.signalScore,trend:x.technical.trend,rsi:x.technical.rsi,signal:x.timeframes?.[3]?.signal})),alerts:rows.slice(0,10).map(x=>({symbol:x.symbol,type:x.decisionAI.action,message:x.decisionAI.tradeBrief}))},topOpportunity:rows[0]||null,rows};
 }
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V17 AI Trading Workspace",modules:["AI Trading Workspace","Watchlist","Price Alerts","Trade Planner","Position Size","Trade Checklist","AI Coach","Trade Journal Pro"],status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V18 Professional Trading Terminal",modules:["Market Intelligence","Technical Engine","Multi-Timeframe","Heatmap","Signal Matrix","Workspace Complete","Trade Journal Pro"],status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),cache:cacheMeta(),services})});
 app.get("/api/terminal",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"80",10)||80,20,100)))}catch(e){next(e)}});
 app.get("/api/scan",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"50",10)||50,10,100)))}catch(e){next(e)}});

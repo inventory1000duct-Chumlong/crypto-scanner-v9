@@ -47,3 +47,19 @@ body{margin:0;background:#06101f;color:#e6edf7;font-family:Arial,sans-serif}head
 .watch-star{font-size:18px;color:#facc15}
 .planner-result{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:14px 0}
 @media(max-width:900px){.planner-result{grid-template-columns:repeat(2,1fr)}}
+
+.action-plan-list{line-height:1.8}
+.action-plan-list li{margin-bottom:6px}
+.workspace-score{font-size:34px;font-weight:900;color:#00e7c1}
+.plan-good{border-color:rgba(34,197,94,.55)}
+.plan-risk{border-color:rgba(251,113,133,.55)}
+
+.heatmap{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:14px 0}
+.heatcell{border:1px solid #26354f;border-radius:12px;padding:12px;min-height:82px;display:flex;flex-direction:column;justify-content:space-between;background:#0f172a}
+.heatcell.up{background:rgba(34,197,94,.18)}
+.heatcell.down{background:rgba(251,113,133,.16)}
+.heatcell.neutral{background:rgba(250,204,21,.10)}
+.heatcell b{font-size:18px}
+.signal-buy{color:#6bff9d;font-weight:900}.signal-sell{color:#fb7185;font-weight:900}.signal-neutral{color:#facc15;font-weight:900}
+.mtf-pill{display:inline-block;padding:5px 8px;border-radius:999px;background:#162238;border:1px solid #26354f;margin:2px;font-size:12px}
+@media(max-width:900px){.heatmap{grid-template-columns:repeat(2,1fr)}}

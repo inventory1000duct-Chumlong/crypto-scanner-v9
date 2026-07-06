@@ -1,6 +1,6 @@
 {
-  "name": "crypto-scanner-v17-ai-trading-workspace",
-  "version": "17.0.0",
+  "name": "crypto-scanner-v18-professional-trading-terminal",
+  "version": "18.0.0",
   "type": "module",
   "scripts": {
     "start": "node server.js"

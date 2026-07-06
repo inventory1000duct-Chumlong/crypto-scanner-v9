@@ -1,14 +1,12 @@
-# Crypto Scanner Pro V17 AI Trading Workspace
+# Crypto Scanner Pro V18 Professional Trading Terminal
 
-เพิ่มจาก V16.2:
-- AI Trading Workspace หน้ารวม
-- Watchlist เพิ่ม/ลบเหรียญ
-- Price Alerts สูงกว่า/ต่ำกว่า
-- Trade Planner
-- Position Size Calculator
-- Risk / Reward / R:R
-- Trade Checklist 8 ข้อ
-- AI Coach วิเคราะห์พฤติกรรมจาก Trade Journal
-- ใช้ข้อมูล localStorage เหมือนเดิม
+เพิ่มจาก V17.1:
+- Market Intelligence
+- Market Breadth
+- Market Heatmap
+- Technical Engine: EMA20 / EMA50 / EMA200 / RSI / MACD / ATR / Bollinger Width แบบคำนวณ Proxy จากข้อมูลปัจจุบัน
+- Multi-Timeframe Signal Matrix: 5m / 15m / 1h / 4h / 1D / 1W
+- Technical Leaders
+- โครงสร้างพร้อมไป V19 Quant & AI Decision Engine
 
-หมายเหตุ: ระบบนี้ช่วยวางแผนและบันทึกการเทรด ไม่ได้ส่งคำสั่งซื้อขายจริง
+หมายเหตุ: Technical Indicator เป็น Proxy Engine จากข้อมูล public market snapshot ยังไม่ใช่ OHLC จริงจาก Exchange
