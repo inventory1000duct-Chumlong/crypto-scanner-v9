@@ -1,12 +1,14 @@
-# Crypto Scanner Pro V16.2 Trade Journal Pro
+# Crypto Scanner Pro V17 AI Trading Workspace
 
-เพิ่มจาก V16.1:
-- P/L แยกรายเหรียญ
-- Equity Curve จาก Realized P/L
-- ปุ่มแก้ไขรายการ Trade
-- Backup JSON สำหรับสำรองข้อมูล
-- Restore JSON สำหรับกู้คืนข้อมูล
-- สรุป Buy/Sell/Fees/Realized/Unrealized/Net P/L รายเหรียญ
-- ยังเก็บข้อมูลใน localStorage ของเครื่องผู้ใช้
+เพิ่มจาก V16.2:
+- AI Trading Workspace หน้ารวม
+- Watchlist เพิ่ม/ลบเหรียญ
+- Price Alerts สูงกว่า/ต่ำกว่า
+- Trade Planner
+- Position Size Calculator
+- Risk / Reward / R:R
+- Trade Checklist 8 ข้อ
+- AI Coach วิเคราะห์พฤติกรรมจาก Trade Journal
+- ใช้ข้อมูล localStorage เหมือนเดิม
 
-หมายเหตุ: เป็นระบบบันทึกและวิเคราะห์ ไม่ได้ส่งคำสั่งซื้อขายจริง
+หมายเหตุ: ระบบนี้ช่วยวางแผนและบันทึกการเทรด ไม่ได้ส่งคำสั่งซื้อขายจริง
