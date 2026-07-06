@@ -24,3 +24,10 @@ body{margin:0;background:#06101f;color:#e6edf7;font-family:Arial,sans-serif}head
 .portfolio-kpi span{display:block;color:#8291ad;font-size:11px}
 .portfolio-kpi b{display:block;margin-top:6px;font-size:18px}
 @media(max-width:1100px){.chartcard.v16{grid-template-columns:1fr}.portfolio-kpis{grid-template-columns:repeat(2,1fr)}}
+
+.journal-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:14px 0}
+.journal-kpi{background:rgba(255,255,255,.04);border:1px solid #26354f;border-radius:12px;padding:12px;text-align:center}
+.journal-kpi span{display:block;color:#8291ad;font-size:11px}
+.journal-kpi b{display:block;margin-top:6px;font-size:18px}
+.side-buy{color:#6bff9d;font-weight:900}.side-sell{color:#fb7185;font-weight:900}
+@media(max-width:900px){.journal-kpis{grid-template-columns:repeat(2,1fr)}}
