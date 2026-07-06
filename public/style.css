@@ -63,3 +63,10 @@ body{margin:0;background:#06101f;color:#e6edf7;font-family:Arial,sans-serif}head
 .signal-buy{color:#6bff9d;font-weight:900}.signal-sell{color:#fb7185;font-weight:900}.signal-neutral{color:#facc15;font-weight:900}
 .mtf-pill{display:inline-block;padding:5px 8px;border-radius:999px;background:#162238;border:1px solid #26354f;margin:2px;font-size:12px}
 @media(max-width:900px){.heatmap{grid-template-columns:repeat(2,1fr)}}
+
+.prob-high{color:#6bff9d;font-weight:900}.prob-mid{color:#facc15;font-weight:900}.prob-low{color:#fb7185;font-weight:900}
+.scenario-card{background:#0f172a;border:1px solid #26354f;border-radius:14px;padding:14px}
+.scenario-card h3{margin:0 0 8px;color:#00e7c1}
+.alloc-bar{height:10px;border-radius:999px;background:#162238;overflow:hidden;margin-top:6px}
+.alloc-bar i{display:block;height:100%;background:linear-gradient(90deg,#00e7c1,#3b82f6)}
+.corr-pill{display:inline-block;border:1px solid #26354f;border-radius:999px;padding:5px 8px;margin:2px;background:#162238}

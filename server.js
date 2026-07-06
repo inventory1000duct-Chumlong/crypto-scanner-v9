@@ -6,7 +6,7 @@ import compression from "compression";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const PRODUCT="Crypto Scanner Pro", VERSION="18.0.0", EDITION="Professional Trading Terminal", BUILD="2026.07.06-V18", API_VERSION="18.0.0-professional-trading-terminal";
+const PRODUCT="Crypto Scanner Pro", VERSION="19.0.0", EDITION="Quant AI Decision Engine", BUILD="2026.07.06-V19", API_VERSION="19.0.0-quant-ai-decision-engine";
 const PORT=process.env.PORT||3000;
 const __filename=fileURLToPath(import.meta.url), __dirname=path.dirname(__filename);
 const app=express();
@@ -119,6 +119,50 @@ function heatmapData(rows){
   return rows.slice(0,36).map(x=>({symbol:x.symbol,name:x.name,sector:x.sector,change24h:x.change24h,score:x.score,grade:x.grade,size:Math.max(1,Math.log10((x.marketCap||x.volume||1)+10)),decision:x.decisionAI?.action||x.decision}));
 }
 
+
+function quantV19(row, market){
+  const tech=row.technical||{};
+  const prob=clamp(Math.round(38+(row.score||50)*0.26+(row.confidence||50)*0.22+(tech.signalScore||50)*0.18+(row.quant?.expectedValue||0)*8-(market.risk==="HIGH"?10:0)),5,95);
+  const gain=round(Math.max(1.5,((row.tp2-row.price)/row.price*100)||((row.quant?.expectedValue||0)*8)),2);
+  const loss=round(Math.max(1.0,((row.price-row.sl)/row.price*100)||((row.volatility||3)*.7)),2);
+  const riskScore=clamp(Math.round((row.volatility||3)*5+(market.risk==="HIGH"?25:0)+(row.futures?.liquidationRisk||0)*.35-(row.components?.liquidity||50)*.25),0,100);
+  const rr=gain/loss;
+  const kelly=round(clamp(((prob/100)*rr-(1-prob/100))/(rr||1),0,.5),3);
+  const confidence=clamp(Math.round(prob*.55+(row.confidence||50)*.25+(tech.signalScore||50)*.2-riskScore*.15),0,100);
+  return {probability:prob,expectedGainPct:gain,expectedLossPct:loss,riskScore,riskLevel:riskScore>=70?"HIGH":riskScore>=45?"MEDIUM":"LOW",kelly,positionConfidence:confidence,quantRank:confidence>=85?"Q1":confidence>=70?"Q2":confidence>=55?"Q3":"Q4"};
+}
+function scenarioV19(row, market){
+  const q=row.quantV19||{};
+  const bull=clamp(Math.round((q.probability||50)*.62+(row.technical?.trend==="BULL"?18:6)+(market.risk==="HIGH"?-10:5)),5,85);
+  const bear=clamp(Math.round((100-(q.probability||50))*.45+(q.riskScore||40)*.35+(market.risk==="HIGH"?18:2)),5,80);
+  const base=clamp(100-bull-bear,5,80), total=bull+base+bear;
+  return {bull:{prob:round(bull/total*100,1),target:row.tp2,comment:"โมเมนตัมและ Sector สนับสนุน"},base:{prob:round(base/total*100,1),target:row.tp1,comment:"แกว่งในกรอบ รอจังหวะเข้า"},bear:{prob:round(bear/total*100,1),target:row.sl,comment:"หลุดแผน ต้องคุมความเสี่ยง"}};
+}
+function regimeV19(market,breadth){
+  if(market.risk==="HIGH"&&(breadth?.downPct||0)>60)return"PANIC";
+  if((breadth?.upPct||0)>70&&market.fng>75)return"EUPHORIA";
+  if(market.regime==="BULL"&&(breadth?.upPct||0)>55)return"TREND";
+  if(market.regime==="ACCUMULATION")return"ACCUMULATION";
+  if(market.regime==="BEAR")return"DISTRIBUTION";
+  return"SIDEWAY";
+}
+function correlationProxy(rows){
+  const top=rows.slice(0,10);
+  return top.map(a=>({symbol:a.symbol,items:top.filter(b=>b.symbol!==a.symbol).slice(0,6).map(b=>({symbol:b.symbol,corr:clamp(round(0.35+(a.sector===b.sector?0.28:0)+(Math.sign(a.change24h)===Math.sign(b.change24h)?0.18:-0.05)+(1-Math.min(1,Math.abs((a.volatility||0)-(b.volatility||0))/20))*.22,2),0.05,0.95)}))}));
+}
+function portfolioOptimizer(rows){
+  const picks=rows.filter(x=>["A+","A","B"].includes(x.grade)).slice(0,8);
+  const total=picks.reduce((s,x)=>s+(x.quantV19?.positionConfidence||x.score||50),0)||1;
+  const alloc=picks.map(x=>({symbol:x.symbol,weightPct:round(((x.quantV19?.positionConfidence||x.score||50)/total)*80,1),reason:`${x.grade} / Prob ${x.quantV19?.probability}% / Risk ${x.quantV19?.riskLevel}`}));
+  alloc.push({symbol:"CASH",weightPct:round(Math.max(10,100-alloc.reduce((s,x)=>s+x.weightPct,0)),1),reason:"กันความเสี่ยงและรอจังหวะ"});
+  return alloc;
+}
+function aiDecisionReport(payload){
+  const top=payload.rows?.[0], b=payload.terminal?.breadth||{};
+  const leaders=(payload.terminal?.technicalLeaders||[]).slice(0,5).map(x=>x.symbol).join(", ");
+  return `ตลาดอยู่ในโหมด ${payload.terminal?.regimeV19||payload.market?.regime} | Breadth Up ${b.upPct||0}% / Down ${b.downPct||0}% | Sector เด่น ${payload.summary?.bestSector||"-"} | Technical Leaders ${leaders||"-"} | Top Quant ${top?.symbol||"-"} Probability ${top?.quantV19?.probability||"-"}%, Risk ${top?.quantV19?.riskLevel||"-"}. ใช้ Position Size ตาม Risk และไม่ไล่ราคาเมื่อ Volatility สูง`;
+}
+
 async function terminalPayload(limit=80){
  const pack=await getCoins(limit), fng=await getFng(), coins=pack.coins;
  const avg24=avg(coins.map(x=>x.change24h)), medAbs=median(coins.map(x=>Math.abs(x.change24h))), reg=marketRegime(avg24,medAbs,fng.value);
@@ -133,12 +177,16 @@ async function terminalPayload(limit=80){
   const ai=aiScore(comps), conf=confidence({score:ai.score,comps,penalties,providerQuality}), qm=quantMetrics({score:ai.score,conf,rr:p.rr,volatility:p.volatility,regime:reg,components:comps});
   const g=grade({score:ai.score,conf,rr:p.rr,volRatio,regime:reg,riskScore:comps.risk,ev:qm.expectedValue}), pos=position(p.entryHigh,p.sl,qm.maxRiskPct);
   const row={symbol:coin.symbol,name:coin.name,sector:sec,price:coin.price,rank:coin.rank,change24h:round(coin.change24h,2),change7d:round(coin.change7d,2),volume:coin.volume,marketCap:coin.marketCap,volumeRatio:round(volRatio,2),score:ai.score,confidence:conf,grade:g,decision:decision(g,conf,reg,qm.expectedValue),quant:qm,xai:ai.xai,components:comps,reasons:ai.xai.slice(0,4).map(x=>`${x.component} +${x.contribution}`),penalties,rr:round(p.rr,2),volatility:round(p.volatility,2),atr:round(p.atr,8),entryLow:round(p.entryLow,8),entryHigh:round(p.entryHigh,8),sl:round(p.sl,8),tp1:round(p.tp1,8),tp2:round(p.tp2,8),tp3:round(p.tp3,8),position:pos};
-  row.futures=futuresMetrics(row); row.onchain=onchainProxy(row); row.backtest=backtestProxy(row); row.technical=technicalEngine(row,market); row.timeframes=timeframeSignal(row); row.decisionAI=decisionIntelligence(row,market); return row;
+  row.futures=futuresMetrics(row); row.onchain=onchainProxy(row); row.backtest=backtestProxy(row); row.technical=technicalEngine(row,market); row.timeframes=timeframeSignal(row); row.quantV19=quantV19(row,market); row.scenario=scenarioV19(row,market); row.decisionAI=decisionIntelligence(row,market); return row;
  }).sort((a,b)=>b.decisionAI.decisionScore-a.decisionAI.decisionScore||gradeRank(b.grade)-gradeRank(a.grade)||b.confidence-a.confidence);
- return {ok:true,product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,source:pack.source,dataQuality:pack.dataQuality,cache:cacheMeta(),time:new Date().toISOString(),diagnostics:pack.diagnostics,market,sectors,summary:summary(rows,sectors,market),terminal:{breadth:marketBreadth(rows),heatmap:heatmapData(rows),technicalLeaders:rows.slice().sort((a,b)=>(b.technical?.signalScore||0)-(a.technical?.signalScore||0)).slice(0,10).map(x=>({symbol:x.symbol,score:x.technical.signalScore,trend:x.technical.trend,rsi:x.technical.rsi,signal:x.timeframes?.[3]?.signal})),alerts:rows.slice(0,10).map(x=>({symbol:x.symbol,type:x.decisionAI.action,message:x.decisionAI.tradeBrief}))},topOpportunity:rows[0]||null,rows};
+ const breadth=marketBreadth(rows);
+ const terminal={breadth,heatmap:heatmapData(rows),regimeV19:regimeV19(market,breadth),technicalLeaders:rows.slice().sort((a,b)=>(b.technical?.signalScore||0)-(a.technical?.signalScore||0)).slice(0,10).map(x=>({symbol:x.symbol,score:x.technical.signalScore,trend:x.technical.trend,rsi:x.technical.rsi,signal:x.timeframes?.[3]?.signal})),quantLeaders:rows.slice().sort((a,b)=>(b.quantV19?.positionConfidence||0)-(a.quantV19?.positionConfidence||0)).slice(0,15).map(x=>({symbol:x.symbol,probability:x.quantV19.probability,risk:x.quantV19.riskLevel,kelly:x.quantV19.kelly,rank:x.quantV19.quantRank})),portfolioOptimizer:portfolioOptimizer(rows),correlation:correlationProxy(rows),alerts:rows.slice(0,10).map(x=>({symbol:x.symbol,type:x.decisionAI.action,message:x.decisionAI.tradeBrief}))};
+ const payload={ok:true,product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,source:pack.source,dataQuality:pack.dataQuality,cache:cacheMeta(),time:new Date().toISOString(),diagnostics:pack.diagnostics,market,sectors,summary:summary(rows,sectors,market),terminal,topOpportunity:rows[0]||null,rows};
+ payload.aiDecisionReport=aiDecisionReport(payload);
+ return payload;
 }
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V18 Professional Trading Terminal",modules:["Market Intelligence","Technical Engine","Multi-Timeframe","Heatmap","Signal Matrix","Workspace Complete","Trade Journal Pro"],status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V19 Quant AI Decision Engine",modules:["Quant Engine 2.0","AI Probability","Scenario Analysis","Portfolio Optimizer","Correlation Matrix","AI Decision Report","Technical Engine"],status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),cache:cacheMeta(),services})});
 app.get("/api/terminal",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"80",10)||80,20,100)))}catch(e){next(e)}});
 app.get("/api/scan",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"50",10)||50,10,100)))}catch(e){next(e)}});

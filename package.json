@@ -1,6 +1,6 @@
 {
-  "name": "crypto-scanner-v18-professional-trading-terminal",
-  "version": "18.0.0",
+  "name": "crypto-scanner-v19-quant-ai-decision-engine",
+  "version": "19.0.0",
   "type": "module",
   "scripts": {
     "start": "node server.js"
