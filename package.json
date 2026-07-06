@@ -1,6 +1,6 @@
 {
-  "name": "crypto-scanner-v15-decision-intelligence",
-  "version": "15.5.0",
+  "name": "crypto-scanner-v15-portfolio-candlestick-tp",
+  "version": "15.7.0",
   "type": "module",
   "scripts": {
     "start": "node server.js"
