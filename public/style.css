@@ -31,3 +31,8 @@ body{margin:0;background:#06101f;color:#e6edf7;font-family:Arial,sans-serif}head
 .journal-kpi b{display:block;margin-top:6px;font-size:18px}
 .side-buy{color:#6bff9d;font-weight:900}.side-sell{color:#fb7185;font-weight:900}
 @media(max-width:900px){.journal-kpis{grid-template-columns:repeat(2,1fr)}}
+
+.journal-chart{background:#0f172a;border:1px solid #26354f;border-radius:14px;margin:14px 0;padding:14px}
+.equity-svg{width:100%;height:220px;background:#07101f;border:1px solid #26354f;border-radius:12px}
+.symbol-pl-title{margin:18px 0 8px;color:#e6edf7}
+.action-mini{padding:6px 9px;border-radius:8px;font-size:12px;margin-right:4px}

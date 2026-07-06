@@ -1,6 +1,6 @@
 {
-  "name": "crypto-scanner-v16-trade-journal",
-  "version": "16.1.0",
+  "name": "crypto-scanner-v16-trade-journal-pro",
+  "version": "16.2.0",
   "type": "module",
   "scripts": {
     "start": "node server.js"

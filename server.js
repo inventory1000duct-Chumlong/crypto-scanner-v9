@@ -6,7 +6,7 @@ import compression from "compression";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const PRODUCT="Crypto Scanner Pro", VERSION="16.1.0", EDITION="Trade Journal Edition", BUILD="2026.07.06-TJ1", API_VERSION="16.1.0-trade-journal";
+const PRODUCT="Crypto Scanner Pro", VERSION="16.2.0", EDITION="Trade Journal Pro", BUILD="2026.07.06-TJ2", API_VERSION="16.2.0-trade-journal-pro";
 const PORT=process.env.PORT||3000;
 const __filename=fileURLToPath(import.meta.url), __dirname=path.dirname(__filename);
 const app=express();
@@ -101,7 +101,7 @@ async function terminalPayload(limit=80){
  return {ok:true,product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,source:pack.source,dataQuality:pack.dataQuality,cache:cacheMeta(),time:new Date().toISOString(),diagnostics:pack.diagnostics,market,sectors,summary:summary(rows,sectors,market),terminal:{alerts:rows.slice(0,10).map(x=>({symbol:x.symbol,type:x.decisionAI.action,message:x.decisionAI.tradeBrief}))},topOpportunity:rows[0]||null,rows};
 }
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V16.1 Trade Journal Edition",modules:["Trade Journal","Transaction History","Realized P/L","Fees","Professional Portfolio","Currency THB/USD","Decision Intelligence"],status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V16.2 Trade Journal Pro",modules:["Trade Journal Pro","Symbol P/L","Equity Curve","Backup JSON","Realized P/L","Fees","Professional Portfolio","Decision Intelligence"],status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),cache:cacheMeta(),services})});
 app.get("/api/terminal",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"80",10)||80,20,100)))}catch(e){next(e)}});
 app.get("/api/scan",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"50",10)||50,10,100)))}catch(e){next(e)}});
