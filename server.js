@@ -6,7 +6,7 @@ import compression from "compression";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const PRODUCT="Crypto Scanner Pro", VERSION="19.0.0", EDITION="Quant AI Decision Engine", BUILD="2026.07.06-V19", API_VERSION="19.0.0-quant-ai-decision-engine";
+const PRODUCT="Crypto Scanner Pro", VERSION="20.0.0", EDITION="Institutional Architecture", BUILD="2026.07.06-V20", API_VERSION="20.0.0-institutional-architecture";
 const PORT=process.env.PORT||3000;
 const __filename=fileURLToPath(import.meta.url), __dirname=path.dirname(__filename);
 const app=express();
@@ -186,7 +186,7 @@ async function terminalPayload(limit=80){
  return payload;
 }
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V19 Quant AI Decision Engine",modules:["Quant Engine 2.0","AI Probability","Scenario Analysis","Portfolio Optimizer","Correlation Matrix","AI Decision Report","Technical Engine"],status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V20 Institutional Architecture",modules:["Institutional Architecture","Modular Frontend","Data Layer","Settings","Production Status","Quant Engine","AI Decision Engine"],status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),cache:cacheMeta(),services})});
 app.get("/api/terminal",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"80",10)||80,20,100)))}catch(e){next(e)}});
 app.get("/api/scan",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"50",10)||50,10,100)))}catch(e){next(e)}});
@@ -201,6 +201,25 @@ app.get("/api/fx",async(req,res)=>{
   }catch(e){}
   res.json({ok:true,pair:"USDTHB",rate:round(rate,4),source,version:API_VERSION,time:new Date().toISOString()});
 });
+
+
+app.get("/api/institutional/status",(req,res)=>res.json({
+  ok:true,
+  version:API_VERSION,
+  architecture:"Modular Monolith Ready",
+  storage:"localStorage data layer / database-ready adapter",
+  modules:["market","scanner","portfolio","journal","workspace","quant","settings","backup"],
+  next:["auth","postgresql","cloud sync","audit log","reports"],
+  productionReadiness:{
+    api:"ready",
+    frontend:"modularized",
+    dataLayer:"local adapter",
+    database:"planned",
+    auth:"planned",
+    auditLog:"planned"
+  },
+  time:new Date().toISOString()
+}));
 
 app.use((err,req,res,next)=>res.status(500).json({ok:false,error:err.message||String(err),version:API_VERSION,build:BUILD,time:new Date().toISOString()}));
 app.listen(PORT,()=>console.log(`${PRODUCT} ${VERSION} ${EDITION} running on port ${PORT}`));

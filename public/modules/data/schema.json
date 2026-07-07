@@ -1,0 +1,13 @@
+{
+  "version": "20.0.0",
+  "entities": [
+    "settings",
+    "trades",
+    "portfolio",
+    "watchlist",
+    "alerts",
+    "savedPlans"
+  ],
+  "databaseReady": true,
+  "nextAdapter": "PostgreSQL"
+}

@@ -1,16 +1,17 @@
-# Crypto Scanner Pro V19 Quant AI Decision Engine
+# Crypto Scanner Pro V20 Institutional Architecture
 
-เพิ่มจาก V18:
-- Quant Engine 2.0
-- AI Probability Engine
-- Expected Gain / Expected Loss
-- Risk Score / Risk Level
-- Kelly Fraction
-- Position Confidence
-- Scenario Analysis: Bull / Base / Bear
-- Portfolio Optimizer
-- Correlation Matrix Proxy
-- AI Decision Report
-- Quant Ranking
+V20 เปลี่ยนจาก Prototype ไปสู่ Production-ready Architecture
 
-หมายเหตุ: Quant/Scenario/Correlation เป็น Proxy Engine จากข้อมูล public market snapshot เพื่อช่วยวิเคราะห์ ไม่ใช่คำแนะนำการลงทุนหรือการรับประกันผลตอบแทน
+เพิ่มจาก V19:
+- Institutional Architecture Dashboard
+- Modular frontend structure: public/modules/
+- Data Layer schema เตรียมย้ายจาก localStorage ไป PostgreSQL
+- Settings: default currency, capital, risk %
+- Institutional Backup / Restore JSON
+- /api/institutional/status
+- Production Readiness status
+- โครงสร้างพร้อมต่อ V21: Login, PostgreSQL, Cloud Sync, Audit Log, Reports
+
+หมายเหตุ:
+- V20 ยังใช้ localStorage เพื่อให้ deploy ง่ายบน Railway และใช้งานต่อเนื่องจากข้อมูลเดิม
+- โครงสร้างถูกเตรียมให้ย้ายไปฐานข้อมูลจริงใน V21 โดยไม่ต้องรื้อ UI ทั้งหมด
