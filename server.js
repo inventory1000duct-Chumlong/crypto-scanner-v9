@@ -6,7 +6,7 @@ import compression from "compression";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const PRODUCT="Crypto Scanner Pro", VERSION="25.0.0", EDITION="Institutional Platform Final", BUILD="2026.07.06-V25-FINAL", API_VERSION="25.0.0-institutional-platform-final";
+const PRODUCT="Crypto Scanner Pro", VERSION="26.0.0", EDITION="Real-time Chart Engine", BUILD="2026.07.06-V26-CHART", API_VERSION="26.0.0-realtime-chart-engine";
 const PORT=process.env.PORT||3000;
 const __filename=fileURLToPath(import.meta.url), __dirname=path.dirname(__filename);
 const app=express();
@@ -186,7 +186,7 @@ async function terminalPayload(limit=80){
  return payload;
 }
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V25 Institutional Platform Final",modules:["Final Institutional Platform","Enterprise Mode","Research Lab","Report Center","Audit Log","Notification Center","API Key Vault Ready","AI Assistant Ready"],status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V26 Real-time Chart Engine",modules:["Real-time Chart Engine","Synthetic OHLC Builder","Auto Refresh","Volume","Timeframe","Entry SL TP Overlay","Portfolio Live P/L","Institutional Platform"],status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),cache:cacheMeta(),services})});
 app.get("/api/terminal",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"80",10)||80,20,100)))}catch(e){next(e)}});
 app.get("/api/scan",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"50",10)||50,10,100)))}catch(e){next(e)}});
@@ -267,6 +267,42 @@ app.get("/api/platform/health",(req,res)=>res.json({
   cacheKeys:cacheMeta(),
   time:new Date().toISOString()
 }));
+
+
+app.get("/api/chart/:symbol",async(req,res)=>{
+  try{
+    const symbol=String(req.params.symbol||"BTC").toUpperCase();
+    const tf=String(req.query.tf||"1m");
+    const limit=Math.max(30,Math.min(240,+req.query.limit||90));
+    const payload=await terminalPayload({limit:120,search:""});
+    const row=(payload.rows||[]).find(x=>x.symbol===symbol)||payload.rows?.[0];
+    if(!row)return res.status(404).json({ok:false,error:"symbol not found",symbol});
+    const now=Date.now();
+    const tfMs={ "1m":60000, "5m":300000, "15m":900000, "1h":3600000, "4h":14400000, "1D":86400000 }[tf]||60000;
+    const base=+row.price||1;
+    const volPct=Math.max(0.004, Math.min(0.12,(row.volatility||3)/100));
+    const trend=(row.change24h||0)/100/limit;
+    let prev=base*(1-(row.change24h||0)/100);
+    const candles=[];
+    for(let i=0;i<limit;i++){
+      const t=now-(limit-i-1)*tfMs;
+      const wave=Math.sin(i/4.8)*(volPct*.45)+Math.cos(i/9.5)*(volPct*.28);
+      const close=base*(1+trend*(i-limit)+wave);
+      const open=prev;
+      const spread=Math.max(base*volPct*(0.35+Math.abs(Math.sin(i))*0.55), base*0.0008);
+      const high=Math.max(open,close)+spread;
+      const low=Math.max(0.00000001,Math.min(open,close)-spread);
+      const volume=Math.round((row.volume||1000000)*(0.55+Math.abs(Math.sin(i/3))*0.9));
+      candles.push({time:new Date(t).toISOString(),open:round(open,8),high:round(high,8),low:round(low,8),close:round(close,8),volume});
+      prev=close;
+    }
+    // Make last candle equal live price so chart moves with scan data.
+    candles[candles.length-1].close=round(base,8);
+    candles[candles.length-1].high=round(Math.max(candles[candles.length-1].high,base),8);
+    candles[candles.length-1].low=round(Math.min(candles[candles.length-1].low,base),8);
+    res.json({ok:true,version:API_VERSION,symbol:row.symbol,name:row.name,tf,limit,price:base,levels:{entry:row.entryHigh,sl:row.sl,tp1:row.tp1,tp2:row.tp2,tp3:row.tp3,avg:null},technical:row.technical,quantV19:row.quantV19,candles,time:new Date().toISOString(),note:"Synthetic OHLC generated from live market snapshot; production-ready adapter can be replaced with exchange klines."});
+  }catch(e){res.status(500).json({ok:false,error:e.message,version:API_VERSION})}
+});
 
 app.use((err,req,res,next)=>res.status(500).json({ok:false,error:err.message||String(err),version:API_VERSION,build:BUILD,time:new Date().toISOString()}));
 app.listen(PORT,()=>console.log(`${PRODUCT} ${VERSION} ${EDITION} running on port ${PORT}`));
