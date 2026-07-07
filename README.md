@@ -1,17 +1,20 @@
-# Crypto Scanner Pro V20 Institutional Architecture
+# Crypto Scanner Pro V25 Institutional Platform Final
 
-V20 เปลี่ยนจาก Prototype ไปสู่ Production-ready Architecture
+V25 คือ Final Prototype / Institutional Platform Build
 
-เพิ่มจาก V19:
-- Institutional Architecture Dashboard
-- Modular frontend structure: public/modules/
-- Data Layer schema เตรียมย้ายจาก localStorage ไป PostgreSQL
-- Settings: default currency, capital, risk %
-- Institutional Backup / Restore JSON
-- /api/institutional/status
-- Production Readiness status
-- โครงสร้างพร้อมต่อ V21: Login, PostgreSQL, Cloud Sync, Audit Log, Reports
+รวมความสามารถจาก V1–V20 และเพิ่ม:
+- Final Platform Dashboard
+- System Health `/api/platform/health`
+- Platform Final Status `/api/platform/final`
+- Research Lab
+- Report Center
+- Audit Log
+- Notification Center ready
+- API Key Vault ready (metadata only)
+- Final Roadmap
+- Enterprise schema ใน `public/modules/enterprise/final-schema.json`
 
-หมายเหตุ:
-- V20 ยังใช้ localStorage เพื่อให้ deploy ง่ายบน Railway และใช้งานต่อเนื่องจากข้อมูลเดิม
-- โครงสร้างถูกเตรียมให้ย้ายไปฐานข้อมูลจริงใน V21 โดยไม่ต้องรื้อ UI ทั้งหมด
+หมายเหตุสำคัญ:
+- V25 ยังไม่ส่งคำสั่งซื้อขายจริง
+- ไม่ควรใส่ API Secret จริงใน localStorage
+- สำหรับ Production จริง ขั้นต่อไปคือ V21-style backend: Auth + PostgreSQL + encrypted vault + server-side audit log

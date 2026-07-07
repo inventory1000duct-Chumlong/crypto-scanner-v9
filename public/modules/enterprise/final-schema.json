@@ -1,0 +1,20 @@
+{
+  "version": "25.0.0",
+  "finalPrototype": true,
+  "productionTargets": [
+    "auth",
+    "postgresql",
+    "audit-log",
+    "reports",
+    "notifications",
+    "api-vault",
+    "research-lab",
+    "mobile"
+  ],
+  "storageAdapter": "localStorage",
+  "serverReadyEndpoints": [
+    "/api/platform/final",
+    "/api/platform/health",
+    "/api/institutional/status"
+  ]
+}

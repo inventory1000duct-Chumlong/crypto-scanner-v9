@@ -6,7 +6,7 @@ import compression from "compression";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const PRODUCT="Crypto Scanner Pro", VERSION="20.0.0", EDITION="Institutional Architecture", BUILD="2026.07.06-V20", API_VERSION="20.0.0-institutional-architecture";
+const PRODUCT="Crypto Scanner Pro", VERSION="25.0.0", EDITION="Institutional Platform Final", BUILD="2026.07.06-V25-FINAL", API_VERSION="25.0.0-institutional-platform-final";
 const PORT=process.env.PORT||3000;
 const __filename=fileURLToPath(import.meta.url), __dirname=path.dirname(__filename);
 const app=express();
@@ -186,7 +186,7 @@ async function terminalPayload(limit=80){
  return payload;
 }
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V20 Institutional Architecture",modules:["Institutional Architecture","Modular Frontend","Data Layer","Settings","Production Status","Quant Engine","AI Decision Engine"],status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V25 Institutional Platform Final",modules:["Final Institutional Platform","Enterprise Mode","Research Lab","Report Center","Audit Log","Notification Center","API Key Vault Ready","AI Assistant Ready"],status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),cache:cacheMeta(),services})});
 app.get("/api/terminal",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"80",10)||80,20,100)))}catch(e){next(e)}});
 app.get("/api/scan",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"50",10)||50,10,100)))}catch(e){next(e)}});
@@ -218,6 +218,53 @@ app.get("/api/institutional/status",(req,res)=>res.json({
     auth:"planned",
     auditLog:"planned"
   },
+  time:new Date().toISOString()
+}));
+
+
+app.get("/api/platform/final",(req,res)=>res.json({
+  ok:true,
+  product:PRODUCT,
+  version:API_VERSION,
+  edition:EDITION,
+  status:"Final prototype build / production-ready roadmap",
+  pillars:[
+    "Market Intelligence",
+    "Quant AI Decision Engine",
+    "Portfolio Manager",
+    "Trade Journal",
+    "AI Coach",
+    "Research Lab",
+    "Report Center",
+    "Enterprise Architecture"
+  ],
+  enterprise:{
+    auth:"ready-design",
+    database:"postgres-ready-design",
+    cloudSync:"ready-design",
+    auditLog:"local-adapter",
+    reports:"local-export-ready",
+    notifications:"webhook-ready-design",
+    apiKeys:"vault-ready-design"
+  },
+  nextProductionSteps:[
+    "Provision PostgreSQL",
+    "Add real authentication provider",
+    "Move localStorage adapter to server repository",
+    "Add encrypted API key vault",
+    "Add scheduled jobs",
+    "Add real OHLC exchange data"
+  ],
+  time:new Date().toISOString()
+}));
+
+app.get("/api/platform/health",(req,res)=>res.json({
+  ok:true,
+  uptimeSec:Math.round(process.uptime()),
+  memory:process.memoryUsage(),
+  node:process.version,
+  version:API_VERSION,
+  cacheKeys:cacheMeta(),
   time:new Date().toISOString()
 }));
 

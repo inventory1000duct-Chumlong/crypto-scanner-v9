@@ -72,3 +72,5 @@ body{margin:0;background:#06101f;color:#e6edf7;font-family:Arial,sans-serif}head
 .corr-pill{display:inline-block;border:1px solid #26354f;border-radius:999px;padding:5px 8px;margin:2px;background:#162238}
 
 .institutional-badge{display:inline-block;border:1px solid #00e7c1;color:#00e7c1;border-radius:999px;padding:5px 10px;margin:3px;background:rgba(0,231,193,.08)}
+
+.final-tag{display:inline-block;padding:6px 10px;border:1px solid #00e7c1;border-radius:999px;color:#00e7c1;background:rgba(0,231,193,.08);margin:3px}

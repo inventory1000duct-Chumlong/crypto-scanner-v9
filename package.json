@@ -1,6 +1,6 @@
 {
-  "name": "crypto-scanner-v20-institutional-architecture",
-  "version": "20.0.0",
+  "name": "crypto-scanner-v25-institutional-platform-final",
+  "version": "25.0.0",
   "type": "module",
   "scripts": {
     "start": "node server.js"
