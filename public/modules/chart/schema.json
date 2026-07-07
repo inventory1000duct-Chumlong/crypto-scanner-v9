@@ -1,0 +1,14 @@
+{
+  "version": "26.0.0",
+  "engine": "Synthetic OHLC Builder",
+  "endpoint": "/api/chart/:symbol",
+  "timeframes": [
+    "1m",
+    "5m",
+    "15m",
+    "1h",
+    "4h",
+    "1D"
+  ],
+  "productionAdapter": "Replace synthetic builder with exchange klines adapter"
+}

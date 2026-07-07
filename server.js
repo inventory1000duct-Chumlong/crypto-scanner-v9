@@ -6,7 +6,7 @@ import compression from "compression";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const PRODUCT="Crypto Scanner Pro", VERSION="26.0.0", EDITION="Real-time Chart Engine", BUILD="2026.07.06-V26-CHART", API_VERSION="26.0.0-realtime-chart-engine";
+const PRODUCT="Crypto Scanner Pro", VERSION="27.0.0", EDITION="Release Manager Toolkit", BUILD="2026.07.06-V27-RELEASE", API_VERSION="27.0.0-release-manager-toolkit";
 const PORT=process.env.PORT||3000;
 const __filename=fileURLToPath(import.meta.url), __dirname=path.dirname(__filename);
 const app=express();
@@ -186,7 +186,7 @@ async function terminalPayload(limit=80){
  return payload;
 }
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V26 Real-time Chart Engine",modules:["Real-time Chart Engine","Synthetic OHLC Builder","Auto Refresh","Volume","Timeframe","Entry SL TP Overlay","Portfolio Live P/L","Institutional Platform"],status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V27 Release Manager Toolkit",modules:["Release Manager","Version Check","Backup Toolkit","Rollback Guide","Deploy Checklist","Production Docs","Real-time Chart Engine","Institutional Platform"],status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),cache:cacheMeta(),services})});
 app.get("/api/terminal",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"80",10)||80,20,100)))}catch(e){next(e)}});
 app.get("/api/scan",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"50",10)||50,10,100)))}catch(e){next(e)}});
@@ -303,6 +303,35 @@ app.get("/api/chart/:symbol",async(req,res)=>{
     res.json({ok:true,version:API_VERSION,symbol:row.symbol,name:row.name,tf,limit,price:base,levels:{entry:row.entryHigh,sl:row.sl,tp1:row.tp1,tp2:row.tp2,tp3:row.tp3,avg:null},technical:row.technical,quantV19:row.quantV19,candles,time:new Date().toISOString(),note:"Synthetic OHLC generated from live market snapshot; production-ready adapter can be replaced with exchange klines."});
   }catch(e){res.status(500).json({ok:false,error:e.message,version:API_VERSION})}
 });
+
+
+app.get("/api/release",(req,res)=>res.json({
+  ok:true,
+  product:PRODUCT,
+  version:API_VERSION,
+  edition:EDITION,
+  build:BUILD,
+  current:"V27 Release Manager Toolkit",
+  website:"https://web-production-03de0.up.railway.app",
+  endpoints:["/api/version","/api/health","/api/scan?limit=50","/api/chart/BTC","/api/platform/health","/api/release"],
+  deployChecklist:[
+    "Backup current GitHub repository",
+    "Upload all files from ZIP to repo root",
+    "Commit with version name",
+    "Wait for Railway redeploy",
+    "Open /api/version",
+    "Hard refresh browser Ctrl+F5",
+    "Check Console for errors"
+  ],
+  rollback:[
+    "Open GitHub repository",
+    "Click Commits",
+    "Select last working commit",
+    "Revert or restore previous ZIP",
+    "Wait for Railway redeploy"
+  ],
+  time:new Date().toISOString()
+}));
 
 app.use((err,req,res,next)=>res.status(500).json({ok:false,error:err.message||String(err),version:API_VERSION,build:BUILD,time:new Date().toISOString()}));
 app.listen(PORT,()=>console.log(`${PRODUCT} ${VERSION} ${EDITION} running on port ${PORT}`));
