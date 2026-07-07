@@ -4,9 +4,10 @@ import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 
-const PRODUCT="Crypto Scanner Pro", VERSION="27.0.0", EDITION="Release Manager Toolkit", BUILD="2026.07.06-V27-RELEASE", API_VERSION="27.0.0-release-manager-toolkit";
+const PRODUCT="Crypto Scanner Pro", VERSION="28.0.0", EDITION="Enterprise Data Engine", BUILD="2026.07.06-V28-DATA", API_VERSION="28.0.0-enterprise-data-engine";
 const PORT=process.env.PORT||3000;
 const __filename=fileURLToPath(import.meta.url), __dirname=path.dirname(__filename);
 const app=express();
@@ -186,7 +187,7 @@ async function terminalPayload(limit=80){
  return payload;
 }
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V27 Release Manager Toolkit",modules:["Release Manager","Version Check","Backup Toolkit","Rollback Guide","Deploy Checklist","Production Docs","Real-time Chart Engine","Institutional Platform"],status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V28 Enterprise Data Engine",modules:["Enterprise Data Engine","Server-side Store","Repository API","Migration","Sync Status","Backup Restore","PostgreSQL Ready","Release Manager"],status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),cache:cacheMeta(),services})});
 app.get("/api/terminal",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"80",10)||80,20,100)))}catch(e){next(e)}});
 app.get("/api/scan",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"50",10)||50,10,100)))}catch(e){next(e)}});
@@ -311,7 +312,7 @@ app.get("/api/release",(req,res)=>res.json({
   version:API_VERSION,
   edition:EDITION,
   build:BUILD,
-  current:"V27 Release Manager Toolkit",
+  current:"V28 Enterprise Data Engine",
   website:"https://web-production-03de0.up.railway.app",
   endpoints:["/api/version","/api/health","/api/scan?limit=50","/api/chart/BTC","/api/platform/health","/api/release"],
   deployChecklist:[
@@ -332,6 +333,72 @@ app.get("/api/release",(req,res)=>res.json({
   ],
   time:new Date().toISOString()
 }));
+
+
+const DATA_DIR=path.join(__dirname,"data");
+const DATA_FILE=path.join(DATA_DIR,"enterprise-store.json");
+function ensureDataStore(){
+  if(!fs.existsSync(DATA_DIR))fs.mkdirSync(DATA_DIR,{recursive:true});
+  if(!fs.existsSync(DATA_FILE)){
+    fs.writeFileSync(DATA_FILE,JSON.stringify({version:"28.0.0",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),collections:{settings:{},trades:[],portfolio:[],watchlist:[],alerts:[],savedPlans:[],audit:[]}},null,2));
+  }
+}
+function readStore(){
+  ensureDataStore();
+  try{return JSON.parse(fs.readFileSync(DATA_FILE,"utf8"))}catch(e){return {version:"28.0.0",collections:{settings:{},trades:[],portfolio:[],watchlist:[],alerts:[],savedPlans:[],audit:[]}}}
+}
+function writeStore(store){
+  ensureDataStore();
+  store.updatedAt=new Date().toISOString();
+  fs.writeFileSync(DATA_FILE,JSON.stringify(store,null,2));
+  return store;
+}
+function collectionName(name){
+  const allowed=["settings","trades","portfolio","watchlist","alerts","savedPlans","audit"];
+  if(!allowed.includes(name))throw Error("invalid collection");
+  return name;
+}
+app.get("/api/data/status",(req,res)=>{
+  const store=readStore();
+  const c=store.collections||{};
+  res.json({ok:true,version:API_VERSION,engine:"Enterprise JSON Store",adapter:"server-file",postgresReady:true,file:"data/enterprise-store.json",counts:{settings:Object.keys(c.settings||{}).length,trades:(c.trades||[]).length,portfolio:(c.portfolio||[]).length,watchlist:(c.watchlist||[]).length,alerts:(c.alerts||[]).length,savedPlans:(c.savedPlans||[]).length,audit:(c.audit||[]).length},updatedAt:store.updatedAt,time:new Date().toISOString()});
+});
+app.get("/api/data/export",(req,res)=>res.json({ok:true,store:readStore(),time:new Date().toISOString()}));
+app.post("/api/data/import",(req,res)=>{
+  const body=req.body||{};
+  const store=readStore();
+  store.collections=store.collections||{};
+  const incoming=body.collections||body;
+  for(const key of ["settings","trades","portfolio","watchlist","alerts","savedPlans","audit"]){
+    if(incoming[key]!==undefined)store.collections[key]=incoming[key];
+  }
+  writeStore(store);
+  res.json({ok:true,message:"imported",status:{collections:Object.keys(store.collections||{}),updatedAt:store.updatedAt}});
+});
+app.get("/api/data/:collection",(req,res)=>{
+  const name=collectionName(req.params.collection);
+  const store=readStore();
+  res.json({ok:true,collection:name,data:store.collections?.[name]??(name==="settings"?{}:[])});
+});
+app.post("/api/data/:collection",(req,res)=>{
+  const name=collectionName(req.params.collection);
+  const store=readStore();
+  store.collections=store.collections||{};
+  store.collections[name]=req.body?.data ?? req.body ?? (name==="settings"?{}:[]);
+  writeStore(store);
+  res.json({ok:true,collection:name,count:Array.isArray(store.collections[name])?store.collections[name].length:Object.keys(store.collections[name]||{}).length,updatedAt:store.updatedAt});
+});
+app.post("/api/data/migrate-local",(req,res)=>{
+  const payload=req.body||{};
+  const store=readStore();
+  store.collections=store.collections||{};
+  for(const key of ["settings","trades","portfolio","watchlist","alerts","savedPlans","audit"]){
+    if(payload[key]!==undefined)store.collections[key]=payload[key];
+  }
+  store.migratedAt=new Date().toISOString();
+  writeStore(store);
+  res.json({ok:true,message:"localStorage payload migrated to Enterprise Data Engine",updatedAt:store.updatedAt});
+});
 
 app.use((err,req,res,next)=>res.status(500).json({ok:false,error:err.message||String(err),version:API_VERSION,build:BUILD,time:new Date().toISOString()}));
 app.listen(PORT,()=>console.log(`${PRODUCT} ${VERSION} ${EDITION} running on port ${PORT}`));
