@@ -1,0 +1,22 @@
+{
+  "version": "29.0.0",
+  "adapters": [
+    "aggregate",
+    "coingecko",
+    "binance",
+    "bybit",
+    "okx",
+    "bitget",
+    "mexc"
+  ],
+  "interface": [
+    "getTicker",
+    "getMarkets",
+    "getKlines",
+    "getOrderBook",
+    "getFundingRate",
+    "healthCheck"
+  ],
+  "status": "framework-ready",
+  "next": "replace synthetic spread with live exchange APIs"
+}
