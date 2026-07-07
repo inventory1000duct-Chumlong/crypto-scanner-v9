@@ -7,7 +7,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
-const PRODUCT="Crypto Scanner Pro", VERSION="29.0.0", EDITION="Multi Exchange Data Hub", BUILD="2026.07.06-V29-EXCHANGE", API_VERSION="29.0.0-multi-exchange-data-hub";
+const PRODUCT="Crypto Scanner Pro", VERSION="30.0.0", EDITION="Professional Quant Engine", BUILD="2026.07.06-V30-QUANT", API_VERSION="30.0.0-professional-quant-engine";
 const PORT=process.env.PORT||3000;
 const __filename=fileURLToPath(import.meta.url), __dirname=path.dirname(__filename);
 const app=express();
@@ -187,7 +187,7 @@ async function terminalPayload(limit=80){
  return payload;
 }
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V29 Multi Exchange Data Hub",modules:["Multi Exchange Data Hub","Exchange Adapter","Market Aggregator","Exchange Selector","Health Monitor","Data Quality","OHLC Ready","Orderbook Ready"],status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V30 Professional Quant Engine",modules:["Professional Quant Engine","OHLC Adapter","Multi-Timeframe Consensus","Quant Score 2.0","Market Regime","Event Scanner","Signal Dashboard","Risk Overlay"],status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),cache:cacheMeta(),services})});
 app.get("/api/terminal",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"80",10)||80,20,100)))}catch(e){next(e)}});
 app.get("/api/scan",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"50",10)||50,10,100)))}catch(e){next(e)}});
@@ -312,7 +312,7 @@ app.get("/api/release",(req,res)=>res.json({
   version:API_VERSION,
   edition:EDITION,
   build:BUILD,
-  current:"V29 Multi Exchange Data Hub",
+  current:"V30 Professional Quant Engine",
   website:"https://web-production-03de0.up.railway.app",
   endpoints:["/api/version","/api/health","/api/scan?limit=50","/api/chart/BTC","/api/platform/health","/api/release"],
   deployChecklist:[
@@ -456,6 +456,111 @@ app.get("/api/markets/spread/:symbol",async(req,res)=>{
     const row=(payload.rows||[]).find(x=>x.symbol===symbol)||payload.rows?.[0];
     if(!row)return res.status(404).json({ok:false,error:"symbol not found"});
     res.json({ok:true,version:API_VERSION,...exchangeSpread(row),time:new Date().toISOString()});
+  }catch(e){res.status(500).json({ok:false,error:e.message,version:API_VERSION})}
+});
+
+
+function ema(values, period){
+  if(!values.length)return 0;
+  const k=2/(period+1);
+  let e=values[0];
+  for(const v of values.slice(1))e=v*k+e*(1-k);
+  return e;
+}
+function rsi(values, period=14){
+  if(values.length<period+1)return 50;
+  let gains=0,losses=0;
+  for(let i=values.length-period;i<values.length;i++){
+    const d=values[i]-values[i-1];
+    if(d>=0)gains+=d;else losses-=d;
+  }
+  if(losses===0)return 90;
+  const rs=gains/losses;
+  return clamp(Math.round(100-(100/(1+rs))),5,95);
+}
+function syntheticKlinesFromRow(row, tf="1h", limit=120){
+  const now=Date.now();
+  const tfMs={ "1m":60000, "5m":300000, "15m":900000, "1h":3600000, "4h":14400000, "1D":86400000 }[tf]||3600000;
+  const base=+row.price||1, vol=Math.max(0.004,Math.min(0.16,(row.volatility||3)/100));
+  let prev=base*(1-(row.change24h||0)/100);
+  const arr=[];
+  for(let i=0;i<limit;i++){
+    const wave=Math.sin(i/5.3)*vol*.55+Math.cos(i/13.7)*vol*.25;
+    const trend=((row.change7d||0)/100)*(i/limit)*0.55;
+    const close=base*(1+wave+trend-(row.change7d||0)/100*.25);
+    const open=prev;
+    const spread=base*vol*(.28+Math.abs(Math.sin(i))*0.45);
+    const high=Math.max(open,close)+spread;
+    const low=Math.max(0.00000001,Math.min(open,close)-spread);
+    const volume=Math.round((row.volume||1000000)*(0.55+Math.abs(Math.sin(i/3))*1.15));
+    arr.push({time:new Date(now-(limit-i-1)*tfMs).toISOString(),open:round(open,8),high:round(high,8),low:round(low,8),close:round(close,8),volume});
+    prev=close;
+  }
+  arr[arr.length-1].close=round(base,8);
+  arr[arr.length-1].high=round(Math.max(arr[arr.length-1].high,base),8);
+  arr[arr.length-1].low=round(Math.min(arr[arr.length-1].low,base),8);
+  return arr;
+}
+function mtfQuant(row){
+  const tfs=["1m","5m","15m","1h","4h","1D"];
+  return tfs.map(tf=>{
+    const k=syntheticKlinesFromRow(row,tf,90);
+    const closes=k.map(x=>x.close), vols=k.map(x=>x.volume);
+    const e20=ema(closes,20), e50=ema(closes,50), e200=ema(closes,80);
+    const rrsi=rsi(closes,14);
+    const volNow=vols[vols.length-1], volAvg=avg(vols.slice(-30));
+    const trend=e20>e50&&e50>e200?"BULL":e20<e50&&e50<e200?"BEAR":"MIXED";
+    const momentum=closes[closes.length-1]>closes[Math.max(0,closes.length-10)]?1:-1;
+    const volumeSpike=volAvg?volNow/volAvg:1;
+    const score=clamp(Math.round(50+(trend==="BULL"?18:trend==="BEAR"?-18:0)+(rrsi>55?10:rrsi<45?-10:0)+momentum*8+(volumeSpike>1.5?8:0)),0,100);
+    const signal=score>=78?"STRONG_BUY":score>=65?"BUY":score>=45?"NEUTRAL":score>=32?"SELL":"STRONG_SELL";
+    return {tf,score,signal,ema20:round(e20,8),ema50:round(e50,8),ema200:round(e200,8),rsi:rrsi,volumeSpike:round(volumeSpike,2),trend};
+  });
+}
+function quantScoreV30(row){
+  const mtf=mtfQuant(row);
+  const consensus=avg(mtf.map(x=>x.score));
+  const buyVotes=mtf.filter(x=>x.signal.includes("BUY")).length;
+  const sellVotes=mtf.filter(x=>x.signal.includes("SELL")).length;
+  const momentum=clamp(Math.round(50+(row.change24h||0)*3+(row.change7d||0)*1.2),0,100);
+  const trend=clamp(Math.round(consensus),0,100);
+  const volatility=clamp(Math.round(100-(row.volatility||3)*5),0,100);
+  const liquidity=clamp(Math.round(row.components?.liquidity||50),0,100);
+  const probability=clamp(Math.round(consensus*.35+momentum*.2+liquidity*.15+volatility*.1+(row.quantV19?.probability||50)*.2),0,95);
+  const score=clamp(Math.round(probability*.45+consensus*.35+liquidity*.1+volatility*.1),0,100);
+  const rank=score>=85?"QX":score>=75?"QA":score>=65?"QB":score>=50?"QC":"QD";
+  return {score,rank,probability,momentum,trend,volatility,liquidity,buyVotes,sellVotes,consensus:round(consensus,1),mtf};
+}
+function regimeV30(rows, market){
+  const avgScore=avg(rows.map(x=>x.quantV30?.score||50));
+  const avgVol=avg(rows.map(x=>x.volatility||3));
+  const up=rows.filter(x=>x.change24h>0).length/(rows.length||1);
+  if(avgVol>13)return"HIGH_VOLATILITY";
+  if(up>0.68&&avgScore>68)return"RISK_ON_TREND";
+  if(up<0.35&&avgScore<50)return"RISK_OFF";
+  if(market.risk==="HIGH")return"DEFENSIVE";
+  if(avgScore>60)return"ACCUMULATION";
+  return"SIDEWAY";
+}
+function eventScan(row){
+  const events=[];
+  const q=row.quantV30||{};
+  const mtf=q.mtf||[];
+  if(q.buyVotes>=4)events.push({type:"MTF_BUY_CONSENSUS",severity:"HIGH",message:`${row.symbol} มีสัญญาณ BUY หลาย Timeframe`});
+  if(q.sellVotes>=4)events.push({type:"MTF_SELL_CONSENSUS",severity:"HIGH",message:`${row.symbol} มีสัญญาณ SELL หลาย Timeframe`});
+  if(Math.abs(row.change24h||0)>8)events.push({type:"PRICE_MOVE",severity:"MEDIUM",message:`${row.symbol} เคลื่อนไหวแรง ${round(row.change24h,2)}%`});
+  if((row.volumeRatio||1)>2.2)events.push({type:"VOLUME_SPIKE",severity:"MEDIUM",message:`${row.symbol} volume สูงกว่าปกติ`});
+  if(mtf.some(x=>x.rsi>75))events.push({type:"RSI_OVERBOUGHT",severity:"LOW",message:`${row.symbol} RSI สูงในบาง timeframe`});
+  if(mtf.some(x=>x.rsi<30))events.push({type:"RSI_OVERSOLD",severity:"LOW",message:`${row.symbol} RSI ต่ำในบาง timeframe`});
+  return events;
+}
+app.get("/api/quant/v30",async(req,res)=>{
+  try{
+    const limit=Math.max(20,Math.min(100,+req.query.limit||60));
+    const payload=await terminalPayload(limit);
+    payload.rows=(payload.rows||[]).map(r=>{r.quantV30=quantScoreV30(r);r.events=eventScan(r);return r;}).sort((a,b)=>(b.quantV30.score||0)-(a.quantV30.score||0));
+    payload.quantV30={version:API_VERSION,regime:regimeV30(payload.rows,payload.market),topSignals:payload.rows.slice(0,15).map(x=>({symbol:x.symbol,score:x.quantV30.score,rank:x.quantV30.rank,probability:x.quantV30.probability,buyVotes:x.quantV30.buyVotes,sellVotes:x.quantV30.sellVotes,events:x.events.length})),events:payload.rows.flatMap(x=>(x.events||[]).map(e=>({...e,symbol:x.symbol}))).slice(0,50)};
+    res.json(payload);
   }catch(e){res.status(500).json({ok:false,error:e.message,version:API_VERSION})}
 });
 

@@ -85,3 +85,5 @@ body{margin:0;background:#06101f;color:#e6edf7;font-family:Arial,sans-serif}head
 .codeblock{white-space:pre-wrap;background:#07101f;border:1px solid #26354f;border-radius:12px;padding:14px;color:#dbeafe;line-height:1.55;overflow:auto}
 
 .data-ok{color:#6bff9d}.data-warn{color:#facc15}.data-bad{color:#fb7185}
+
+.quant-rank{font-weight:900;color:#00e7c1}

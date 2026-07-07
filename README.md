@@ -1,19 +1,15 @@
-# Crypto Scanner Pro V29 Multi Exchange Data Hub
+# Crypto Scanner Pro V30 Professional Quant Engine
 
-เพิ่มจาก V28:
-- Multi Exchange Adapter Framework
-- Exchange Selector
-- Exchange Health Dashboard
-- Market Aggregator
-- Spread Monitor
-- Data Quality Monitor
-- `/api/exchanges`
-- `/api/exchanges/health`
-- `/api/markets/aggregate`
-- `/api/markets/spread/:symbol`
-- เตรียมโครงสร้าง OHLC จริง, Order Book, Futures, Funding Rate
+เพิ่มจาก V29:
+- `/api/quant/v30`
+- Quant Score 2.0
+- Multi-Timeframe Consensus: 1m / 5m / 15m / 1h / 4h / 1D
+- Market Regime V30
+- Event Scanner
+- Professional Signal Dashboard
+- MTF Table
+- OHLC Adapter Framework ภายใน
 
 หมายเหตุ:
-- V29 เป็น Adapter Framework + Aggregator prototype
-- CoinGecko ยังเป็น live source หลัก
-- Binance/Bybit/OKX/Bitget/MEXC เป็น adapter-ready เพื่อเปิดใช้งานจริงใน V30+
+- V30 ยังใช้ Synthetic OHLC จาก market snapshot
+- ขั้นต่อไปควรเปลี่ยน `syntheticKlinesFromRow` เป็น real exchange klines เช่น Binance/Bybit/OKX
