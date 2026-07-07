@@ -1,15 +1,16 @@
-# Crypto Scanner Pro V30 Professional Quant Engine
+# Crypto Scanner Pro V31 Live Market Engine
 
-เพิ่มจาก V29:
-- `/api/quant/v30`
-- Quant Score 2.0
-- Multi-Timeframe Consensus: 1m / 5m / 15m / 1h / 4h / 1D
-- Market Regime V30
-- Event Scanner
-- Professional Signal Dashboard
-- MTF Table
-- OHLC Adapter Framework ภายใน
+เพิ่มจาก V30:
+- `/api/live/status`
+- `/api/live/ticker/:symbol`
+- `/api/live/orderbook/:symbol`
+- Live Market tab
+- Order Book / Tape tab
+- Provider Fallback
+- 429 Protection concept
+- Auto Live 5s
+- Data Source Health แบบมือโปร
 
 หมายเหตุ:
-- V30 ยังใช้ Synthetic OHLC จาก market snapshot
-- ขั้นต่อไปควรเปลี่ยน `syntheticKlinesFromRow` เป็น real exchange klines เช่น Binance/Bybit/OKX
+- V31 ยังเป็น REST polling + prototype orderbook/tape
+- ขั้นต่อไป V32 ควรเชื่อม WebSocket จริงจาก Binance/Bybit/OKX
