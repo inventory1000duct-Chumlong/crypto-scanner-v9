@@ -1,16 +1,17 @@
-# Crypto Scanner Pro V31 Live Market Engine
+# Crypto Scanner Pro V32 Real Exchange Stream Engine
 
-เพิ่มจาก V30:
-- `/api/live/status`
-- `/api/live/ticker/:symbol`
-- `/api/live/orderbook/:symbol`
-- Live Market tab
-- Order Book / Tape tab
-- Provider Fallback
-- 429 Protection concept
-- Auto Live 5s
-- Data Source Health แบบมือโปร
+เพิ่มจาก V31:
+- `/api/stream/status`
+- `/api/stream/ticks/:symbol`
+- `/api/stream/candles/:symbol`
+- เมนู Stream
+- เมนู Ticks
+- Tick Buffer
+- Candle Builder จาก tick
+- Auto Stream 3s
+- Provider Stream Status
+- WebSocket-ready architecture
 
 หมายเหตุ:
-- V31 ยังเป็น REST polling + prototype orderbook/tape
-- ขั้นต่อไป V32 ควรเชื่อม WebSocket จริงจาก Binance/Bybit/OKX
+- V32 ยังเป็น stream simulator เพื่อทดสอบโครงสร้าง
+- ขั้นต่อไปคือเชื่อม WebSocket จริงจาก Binance/Bybit/OKX
