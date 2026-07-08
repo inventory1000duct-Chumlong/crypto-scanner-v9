@@ -87,3 +87,13 @@ body{margin:0;background:#06101f;color:#e6edf7;font-family:Arial,sans-serif}head
 .data-ok{color:#6bff9d}.data-warn{color:#facc15}.data-bad{color:#fb7185}
 
 .quant-rank{font-weight:900;color:#00e7c1}
+
+.daily-hero{display:grid;grid-template-columns:1fr 220px;gap:16px;background:#0f172a;border:1px solid #26354f;border-radius:18px;padding:22px;margin:14px 0}
+.daily-score{font-size:58px;font-weight:900;color:#00e7c1;line-height:1}
+.daily-side{display:grid;gap:8px;background:#07101f;border:1px solid #26354f;border-radius:14px;padding:14px;text-align:center}
+.daily-side span{font-size:28px;font-weight:900;color:#e6edf7}
+.coach-card{background:#0f172a;border:1px solid #00e7c1;border-radius:18px;padding:20px;line-height:1.8}
+.badge.buy{background:rgba(34,197,94,.15);color:#6bff9d;border:1px solid rgba(34,197,94,.5)}
+.badge.sell{background:rgba(251,113,133,.15);color:#fb7185;border:1px solid rgba(251,113,133,.5)}
+.badge.hold{background:rgba(250,204,21,.12);color:#facc15;border:1px solid rgba(250,204,21,.45)}
+@media(max-width:900px){.daily-hero{grid-template-columns:1fr}.daily-score{font-size:44px}}

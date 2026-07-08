@@ -1,17 +1,23 @@
-# Crypto Scanner Pro V32 Real Exchange Stream Engine
+# Crypto Scanner Pro — Daily Trading Edition 1.0
 
-เพิ่มจาก V31:
-- `/api/stream/status`
-- `/api/stream/ticks/:symbol`
-- `/api/stream/candles/:symbol`
-- เมนู Stream
-- เมนู Ticks
-- Tick Buffer
-- Candle Builder จาก tick
-- Auto Stream 3s
-- Provider Stream Status
-- WebSocket-ready architecture
+เป้าหมาย:
+เปิดเว็บทุกเช้าแล้วรู้ทันทีว่า
+- ตลาดวันนี้พร้อมไหม
+- เหรียญไหนน่าสนใจ
+- ควรเข้าซื้อหรือรอ
+- พอร์ตเป็นอย่างไร
+- Alert สำคัญคืออะไร
+- AI Coach สรุปให้ใน 30 วินาที
+
+เมนูหลัก:
+1. Daily Dashboard
+2. Opportunities
+3. Portfolio
+4. Alerts
+5. AI Coach
+6. Settings
+7. Developer Mode
 
 หมายเหตุ:
-- V32 ยังเป็น stream simulator เพื่อทดสอบโครงสร้าง
-- ขั้นต่อไปคือเชื่อม WebSocket จริงจาก Binance/Bybit/OKX
+- ระบบนี้เป็น Decision Support ไม่ใช่คำสั่งซื้อขายอัตโนมัติ
+- ยังควรตรวจสอบราคา/สภาพตลาดจริงก่อนตัดสินใจลงทุน

@@ -7,7 +7,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
-const PRODUCT="Crypto Scanner Pro", VERSION="32.0.0", EDITION="Real Exchange Stream Engine", BUILD="2026.07.06-V32-STREAM", API_VERSION="32.0.0-real-exchange-stream-engine";
+const PRODUCT="Crypto Scanner Pro", VERSION="1.0.0", EDITION="Daily Trading Edition", BUILD="2026.07.06-DAILY-1", API_VERSION="1.0.0-daily-trading-edition";
 const PORT=process.env.PORT||3000;
 const __filename=fileURLToPath(import.meta.url), __dirname=path.dirname(__filename);
 const app=express();
@@ -187,7 +187,7 @@ async function terminalPayload(limit=80){
  return payload;
 }
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V32 Real Exchange Stream Engine",modules:["Real Exchange Stream Engine","WebSocket Ready","Tick Buffer","Candle Builder","Stream Status","Provider Streams","Live Market Engine","Quant Engine"],status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"Daily Trading Edition 1.0",modules:["Daily Dashboard","Opportunities","AI Coach","Portfolio P/L","Decision Support","Alerts","Simple Workflow"],status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),cache:cacheMeta(),services})});
 app.get("/api/terminal",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"80",10)||80,20,100)))}catch(e){next(e)}});
 app.get("/api/scan",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"50",10)||50,10,100)))}catch(e){next(e)}});
@@ -312,7 +312,7 @@ app.get("/api/release",(req,res)=>res.json({
   version:API_VERSION,
   edition:EDITION,
   build:BUILD,
-  current:"V32 Real Exchange Stream Engine",
+  current:"Daily Trading Edition 1.0",
   website:"https://web-production-03de0.up.railway.app",
   endpoints:["/api/version","/api/health","/api/scan?limit=50","/api/chart/BTC","/api/platform/health","/api/release"],
   deployChecklist:[
@@ -689,6 +689,41 @@ app.get("/api/stream/candles/:symbol",async(req,res)=>{
     for(let i=0;i<30;i++)streamTick(row,req.query.provider||"aggregate");
     const candles=buildCandlesFromTicks(row.symbol,tf);
     res.json({ok:true,version:API_VERSION,symbol:row.symbol,tf,candles,last:STREAM_STATE.last[row.symbol],time:new Date().toISOString(),note:"Candles built from tick buffer. Production adapter can replace simulator with real WebSocket ticks."});
+  }catch(e){res.status(500).json({ok:false,error:e.message,version:API_VERSION})}
+});
+
+
+function dailyDecision(row, market){
+  const score=row.quantV30?.score||row.quantV19?.positionConfidence||row.score||50;
+  const prob=row.quantV30?.probability||row.quantV19?.probability||row.confidence||50;
+  const risk=row.quantV19?.riskLevel||row.decisionAI?.riskLevel||"MEDIUM";
+  const eventCount=(row.events||[]).length;
+  let action="WAIT", reason="รอจังหวะให้ชัดเจน";
+  if(score>=78&&prob>=70&&risk!=="HIGH"){action="BUY_ZONE";reason="คะแนนสูง Probability ดี และความเสี่ยงไม่สูง";}
+  else if(score>=65&&prob>=60){action="WATCH";reason="เริ่มน่าสนใจ แต่ควรรอราคาเข้าโซน Entry";}
+  else if(risk==="HIGH"||score<45){action="AVOID";reason="ความเสี่ยงสูงหรือสัญญาณยังอ่อน";}
+  return {action,score:Math.round(score),probability:Math.round(prob),risk,eventCount,reason};
+}
+app.get("/api/daily",async(req,res)=>{
+  try{
+    const payload=await terminalPayload(100);
+    payload.rows=(payload.rows||[]).map(r=>{
+      try{ if(!r.quantV30 && typeof quantScoreV30==="function"){r.quantV30=quantScoreV30(r);r.events=eventScan(r);} }catch(e){}
+      r.daily=dailyDecision(r,payload.market);
+      return r;
+    }).sort((a,b)=>(b.daily.score||0)-(a.daily.score||0));
+    const opportunities=payload.rows.filter(x=>["BUY_ZONE","WATCH"].includes(x.daily.action)).slice(0,15);
+    const avoid=payload.rows.filter(x=>x.daily.action==="AVOID").slice(0,10);
+    const marketScore=Math.round(avg(payload.rows.slice(0,30).map(x=>x.daily.score||50)));
+    const riskMode=payload.market?.risk||"MEDIUM";
+    const brief=[
+      `Market Score ${marketScore}/100`,
+      `Fear & Greed ${payload.market?.fng??"-"}`,
+      `วันนี้พบเหรียญเข้าเกณฑ์ ${opportunities.length} เหรียญ`,
+      `Top: ${opportunities.slice(0,5).map(x=>x.symbol).join(", ")||"-"}`,
+      riskMode==="HIGH"?"ตลาดเสี่ยงสูง ควรลดขนาดไม้":"ความเสี่ยงตลาดอยู่ในระดับที่ควบคุมได้"
+    ];
+    res.json({ok:true,version:API_VERSION,edition:EDITION,market:payload.market,summary:payload.summary,daily:{marketScore,riskMode,brief,opportunities:opportunities.map(x=>({symbol:x.symbol,name:x.name,price:x.price,change24h:x.change24h,entry:x.entryHigh,sl:x.sl,tp1:x.tp1,tp2:x.tp2,tp3:x.tp3,daily:x.daily,decisionAI:x.decisionAI,technical:x.technical})),avoid:avoid.map(x=>({symbol:x.symbol,name:x.name,daily:x.daily,change24h:x.change24h}))},rows:payload.rows,time:new Date().toISOString()});
   }catch(e){res.status(500).json({ok:false,error:e.message,version:API_VERSION})}
 });
 
