@@ -97,3 +97,7 @@ body{margin:0;background:#06101f;color:#e6edf7;font-family:Arial,sans-serif}head
 .badge.sell{background:rgba(251,113,133,.15);color:#fb7185;border:1px solid rgba(251,113,133,.5)}
 .badge.hold{background:rgba(250,204,21,.12);color:#facc15;border:1px solid rgba(250,204,21,.45)}
 @media(max-width:900px){.daily-hero{grid-template-columns:1fr}.daily-score{font-size:44px}}
+
+.clean-tabs{position:sticky;top:0;z-index:20;background:#07101f;border-bottom:1px solid #26354f}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+footer{padding:24px;text-align:center;color:#8291ad}

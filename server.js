@@ -7,7 +7,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
-const PRODUCT="Crypto Scanner Pro", VERSION="1.0.0", EDITION="Daily Trading Edition", BUILD="2026.07.06-DAILY-1", API_VERSION="1.0.0-daily-trading-edition";
+const PRODUCT="Crypto Scanner Pro", VERSION="1.1.0", EDITION="Daily Clean Mode", BUILD="2026.07.06-DAILY-1.1-CLEAN", API_VERSION="1.1.0-daily-clean-mode";
 const PORT=process.env.PORT||3000;
 const __filename=fileURLToPath(import.meta.url), __dirname=path.dirname(__filename);
 const app=express();
@@ -187,7 +187,7 @@ async function terminalPayload(limit=80){
  return payload;
 }
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"Daily Trading Edition 1.0",modules:["Daily Dashboard","Opportunities","AI Coach","Portfolio P/L","Decision Support","Alerts","Simple Workflow"],status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"Daily Trading Edition 1.1 Clean Mode",modules:["Daily Dashboard","Opportunities","AI Coach","Portfolio P/L","Decision Support","Alerts","Simple Workflow"],status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),cache:cacheMeta(),services})});
 app.get("/api/terminal",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"80",10)||80,20,100)))}catch(e){next(e)}});
 app.get("/api/scan",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"50",10)||50,10,100)))}catch(e){next(e)}});
@@ -312,7 +312,7 @@ app.get("/api/release",(req,res)=>res.json({
   version:API_VERSION,
   edition:EDITION,
   build:BUILD,
-  current:"Daily Trading Edition 1.0",
+  current:"Daily Trading Edition 1.1 Clean Mode",
   website:"https://web-production-03de0.up.railway.app",
   endpoints:["/api/version","/api/health","/api/scan?limit=50","/api/chart/BTC","/api/platform/health","/api/release"],
   deployChecklist:[
