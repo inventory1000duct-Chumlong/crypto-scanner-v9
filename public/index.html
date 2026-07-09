@@ -3,84 +3,66 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Crypto Scanner Pro Daily</title>
+  <title>Crypto Scanner Pro V33 Morning Dashboard</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <header class="hero">
-    <div>
-      <h1>CRYPTO SCANNER PRO DAILY</h1>
-      <p>Daily Trading Edition 1.1 Clean Mode • ใช้งานทุกเช้าเพื่อดูตลาด เหรียญน่าสนใจ พอร์ต และคำแนะนำ AI</p>
+<header class="morning-header">
+  <div>
+    <h1>CRYPTO SCANNER PRO</h1>
+    <p>V33 Morning Dashboard Edition • เปิดเว็บแล้วเห็นสรุปตลาด เหรียญน่าสนใจ พอร์ต AI Coach และ Alerts ในหน้าเดียว</p>
+    <small id="morningStatus">กำลังโหลด...</small>
+  </div>
+  <button onclick="loadMorning()">Refresh Morning</button>
+</header>
+
+<main class="morning-main">
+  <section class="morning-grid kpis">
+    <div class="morning-card big"><span>Market Score</span><b id="marketScore">-</b></div>
+    <div class="morning-card"><span>Fear & Greed</span><b id="fearGreed">-</b></div>
+    <div class="morning-card"><span>Risk</span><b id="marketRisk">-</b></div>
+    <div class="morning-card"><span>Opportunities</span><b id="oppCount">-</b></div>
+    <div class="morning-card"><span>Portfolio</span><b id="portfolioValue">-</b></div>
+    <div class="morning-card"><span>P/L</span><b id="portfolioPL">-</b></div>
+  </section>
+
+  <section class="morning-layout">
+    <div class="morning-panel main-panel">
+      <h2>🎯 Top Buy Opportunities</h2>
+      <p>เรียงตามคะแนนและ Probability เพื่อช่วยตัดสินใจ “เข้าโซน / รอจังหวะ / เลี่ยง”</p>
+      <div id="topOppBox" class="morning-table">Loading...</div>
     </div>
-    <div class="hero-actions">
-      <button onclick="loadDaily()">Refresh Daily</button>
-      <button onclick="scan()">Refresh Market</button>
-    </div>
-  </header>
 
-  <nav class="tabs clean-tabs">
-    <button class="tab active" data-tab="daily">🌅 Dashboard</button>
-    <button class="tab" data-tab="dailyopp">🎯 เหรียญน่าสนใจ</button>
-    <button class="tab" data-tab="portfolio">💼 พอร์ต</button>
-    <button class="tab" data-tab="dailycoach">🧠 AI Coach</button>
-    <button class="tab" data-tab="settings">⚙️ ตั้งค่า</button>
-  </nav>
-
-  <main>
-    <section id="daily" class="pane active">
-      <h2>🌅 Daily Trading Dashboard</h2>
-      <div id="dailyDashboardBox" class="pick empty">Loading Daily Dashboard...</div>
-      <h3>🔔 Alerts สำคัญวันนี้</h3>
-      <div id="dailyAlertsBox" class="wrap">Loading Alerts...</div>
-    </section>
-
-    <section id="dailyopp" class="pane">
-      <h2>🎯 AI Opportunities วันนี้</h2>
-      <p>เรียงจากเหรียญที่ระบบมองว่าน่าสนใจที่สุด พร้อม Entry / SL / TP เพื่อช่วยตัดสินใจว่าจะ “เข้า” หรือ “รอ”</p>
-      <div id="dailyOppBox" class="wrap">Loading Opportunities...</div>
-    </section>
-
-    <section id="portfolio" class="pane">
-      <h2>💼 Portfolio</h2>
-      <p>กรอกพอร์ตส่วนตัวเพื่อดู P/L และประกอบการตัดสินใจ</p>
-      <div class="controls">
-        <label>Symbol<input id="pfSymbol" placeholder="BTC"></label>
-        <label>จำนวน<input id="pfQty" type="number" step="any" placeholder="0.01"></label>
-        <label>ราคาเฉลี่ย ($)<input id="pfAvg" type="number" step="any" placeholder="65000"></label>
-        <label>แสดงผล<select id="currencySelect"><option value="THB" selected>THB ฿</option><option value="USD">USD $</option></select></label>
-        <button id="addPortfolio">เพิ่มในพอร์ต</button>
-        <button id="clearPortfolio">ล้างพอร์ต</button>
-        <button id="exportPortfolio">Export CSV</button>
-      </div>
-      <div id="portfolioSummary" class="summary">ยังไม่มีข้อมูลพอร์ต</div>
-      <div id="portfolioCharts" class="chartgrid"></div>
-      <div id="portfolioBox" class="wrap"></div>
-    </section>
-
-    <section id="dailycoach" class="pane">
+    <aside class="morning-panel">
       <h2>🧠 AI Coach</h2>
-      <div id="dailyCoachBox" class="pick empty">Loading AI Coach...</div>
-    </section>
+      <div id="coachBox" class="coach-card">Loading...</div>
+      <h2>🔔 Alerts</h2>
+      <div id="alertsBox">Loading...</div>
+    </aside>
+  </section>
 
-    <section id="settings" class="pane">
-      <h2>⚙️ Settings</h2>
-      <div id="settingsBox" class="pick empty">Loading Settings...</div>
-    </section>
+  <section class="morning-panel">
+    <h2>💼 Portfolio Quick Input</h2>
+    <div class="controls">
+      <label>Symbol<input id="pfSymbol" placeholder="BTC"></label>
+      <label>จำนวน<input id="pfQty" type="number" step="any" placeholder="0.01"></label>
+      <label>ราคาเฉลี่ย ($)<input id="pfAvg" type="number" step="any" placeholder="65000"></label>
+      <label>แสดงผล<select id="currencySelect"><option value="THB" selected>THB ฿</option><option value="USD">USD $</option></select></label>
+      <button id="addPortfolio">เพิ่ม/อัปเดต</button>
+      <button id="clearPortfolio">ล้างพอร์ต</button>
+      <button id="exportPortfolio">Export CSV</button>
+    </div>
+    <div id="portfolioSummary" class="summary">ยังไม่มีข้อมูลพอร์ต</div>
+    <div id="portfolioCharts" class="chartgrid"></div>
+    <div id="portfolioBox" class="wrap"></div>
+  </section>
 
-    <section id="hiddenSystem" style="display:none">
-      <div id="status"></div>
-      <div id="error"></div>
-      <div id="summaryBox"></div>
-      <div id="topPick"></div>
-      <div id="rowsBox"></div>
-      <div id="healthBox"></div>
-    </section>
-  </main>
+  <section id="hiddenSystem" style="display:none">
+    <div id="status"></div><div id="error"></div><div id="summaryBox"></div><div id="topPick"></div><div id="rowsBox"></div><div id="healthBox"></div><div id="settingsBox"></div>
+  </section>
+</main>
 
-  <footer>
-    <small>Decision Support Only • ไม่ใช่คำแนะนำการลงทุนหรือคำสั่งซื้อขายอัตโนมัติ</small>
-  </footer>
-
-  <script src="/app-daily-clean.js?v=1.1.0"></script>
+<footer>Decision Support Only • ไม่ใช่คำแนะนำการลงทุนหรือคำสั่งซื้อขายอัตโนมัติ</footer>
+<script src="/app-morning.js?v=33.0.0"></script>
 </body>
 </html>

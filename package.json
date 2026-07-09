@@ -1,6 +1,6 @@
 {
-  "name": "crypto-scanner-daily-trading-edition-clean-mode",
-  "version": "1.1.0",
+  "name": "crypto-scanner-v33-morning-dashboard-edition",
+  "version": "33.0.0",
   "type": "module",
   "scripts": {
     "start": "node server.js"

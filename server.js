@@ -7,7 +7,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
-const PRODUCT="Crypto Scanner Pro", VERSION="1.1.0", EDITION="Daily Clean Mode", BUILD="2026.07.06-DAILY-1.1-CLEAN", API_VERSION="1.1.0-daily-clean-mode";
+const PRODUCT="Crypto Scanner Pro", VERSION="33.0.0", EDITION="Morning Dashboard Edition", BUILD="2026.07.06-V33-MORNING", API_VERSION="33.0.0-morning-dashboard-edition";
 const PORT=process.env.PORT||3000;
 const __filename=fileURLToPath(import.meta.url), __dirname=path.dirname(__filename);
 const app=express();
@@ -187,7 +187,7 @@ async function terminalPayload(limit=80){
  return payload;
 }
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"Daily Trading Edition 1.1 Clean Mode",modules:["Daily Dashboard","Opportunities","AI Coach","Portfolio P/L","Decision Support","Alerts","Simple Workflow"],status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V33 Morning Dashboard Edition",modules:["Daily Dashboard","Opportunities","AI Coach","Portfolio P/L","Decision Support","Alerts","Simple Workflow"],status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),cache:cacheMeta(),services})});
 app.get("/api/terminal",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"80",10)||80,20,100)))}catch(e){next(e)}});
 app.get("/api/scan",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"50",10)||50,10,100)))}catch(e){next(e)}});
@@ -312,7 +312,7 @@ app.get("/api/release",(req,res)=>res.json({
   version:API_VERSION,
   edition:EDITION,
   build:BUILD,
-  current:"Daily Trading Edition 1.1 Clean Mode",
+  current:"V33 Morning Dashboard Edition",
   website:"https://web-production-03de0.up.railway.app",
   endpoints:["/api/version","/api/health","/api/scan?limit=50","/api/chart/BTC","/api/platform/health","/api/release"],
   deployChecklist:[
@@ -724,6 +724,36 @@ app.get("/api/daily",async(req,res)=>{
       riskMode==="HIGH"?"ตลาดเสี่ยงสูง ควรลดขนาดไม้":"ความเสี่ยงตลาดอยู่ในระดับที่ควบคุมได้"
     ];
     res.json({ok:true,version:API_VERSION,edition:EDITION,market:payload.market,summary:payload.summary,daily:{marketScore,riskMode,brief,opportunities:opportunities.map(x=>({symbol:x.symbol,name:x.name,price:x.price,change24h:x.change24h,entry:x.entryHigh,sl:x.sl,tp1:x.tp1,tp2:x.tp2,tp3:x.tp3,daily:x.daily,decisionAI:x.decisionAI,technical:x.technical})),avoid:avoid.map(x=>({symbol:x.symbol,name:x.name,daily:x.daily,change24h:x.change24h}))},rows:payload.rows,time:new Date().toISOString()});
+  }catch(e){res.status(500).json({ok:false,error:e.message,version:API_VERSION})}
+});
+
+
+app.get("/api/morning",async(req,res)=>{
+  try{
+    const payload=await terminalPayload(100);
+    payload.rows=(payload.rows||[]).map(r=>{
+      try{ if(!r.quantV30 && typeof quantScoreV30==="function"){r.quantV30=quantScoreV30(r);r.events=eventScan(r);} }catch(e){}
+      r.daily=dailyDecision(r,payload.market);
+      return r;
+    }).sort((a,b)=>(b.daily.score||0)-(a.daily.score||0));
+    const opportunities=payload.rows.filter(x=>["BUY_ZONE","WATCH"].includes(x.daily.action)).slice(0,12);
+    const marketScore=Math.round(avg(payload.rows.slice(0,30).map(x=>x.daily.score||50)));
+    const buyCount=opportunities.filter(x=>x.daily.action==="BUY_ZONE").length;
+    const watchCount=opportunities.filter(x=>x.daily.action==="WATCH").length;
+    const alerts=[];
+    for(const x of opportunities){
+      if(Math.abs(x.change24h)>6)alerts.push({symbol:x.symbol,type:"PRICE_MOVE",message:`${x.symbol} เคลื่อนไหว ${round(x.change24h,2)}%`});
+      if((x.events||[]).length)alerts.push({symbol:x.symbol,type:"EVENT",message:`${x.symbol} มี Event ${(x.events||[]).length} รายการ`});
+      if(x.daily.action==="BUY_ZONE")alerts.push({symbol:x.symbol,type:"BUY_ZONE",message:`${x.symbol} เข้าเกณฑ์พิจารณาเข้าซื้อเมื่อราคาอยู่ในแผน`});
+    }
+    const coach=[
+      `ตลาดวันนี้ได้คะแนน ${marketScore}/100`,
+      `Fear & Greed ${payload.market?.fng??"-"} และความเสี่ยง ${payload.market?.risk||"MEDIUM"}`,
+      buyCount?`เหรียญเข้าโซน: ${opportunities.filter(x=>x.daily.action==="BUY_ZONE").slice(0,5).map(x=>x.symbol).join(", ")}`:"ยังไม่มีเหรียญที่ควรไล่ซื้อทันที",
+      watchCount?`เหรียญที่ควรรอจังหวะ: ${opportunities.filter(x=>x.daily.action==="WATCH").slice(0,5).map(x=>x.symbol).join(", ")}`:"Watchlist ยังไม่เด่น",
+      `แผนวันนี้: ${payload.market?.risk==="HIGH"?"ลดขนาดไม้และรอ Confirm":"ยึด Entry / SL / TP ตามแผนเท่านั้น"}`
+    ];
+    res.json({ok:true,version:API_VERSION,edition:EDITION,time:new Date().toISOString(),market:payload.market,summary:{marketScore,buyCount,watchCount,totalOpportunities:opportunities.length,totalRows:payload.rows.length},opportunities:opportunities.map(x=>({symbol:x.symbol,name:x.name,price:x.price,change24h:x.change24h,entry:x.entryHigh,sl:x.sl,tp1:x.tp1,tp2:x.tp2,daily:x.daily,events:x.events||[]})),alerts:alerts.slice(0,20),coach});
   }catch(e){res.status(500).json({ok:false,error:e.message,version:API_VERSION})}
 });
 

@@ -1,14 +1,9 @@
-# Crypto Scanner Pro — Daily Trading Edition 1.1 Clean Mode
+# Crypto Scanner Pro V33 — Morning Dashboard Edition
 
-ปรับจาก 1.0:
-- ซ่อนเมนูที่ไม่จำเป็นทั้งหมด
-- เหลือเฉพาะเมนูใช้งานจริงทุกเช้า:
-  1. Dashboard
-  2. เหรียญน่าสนใจ
-  3. พอร์ต
-  4. AI Coach
-  5. ตั้งค่า
-- ย้าย Alerts สำคัญไปไว้ใน Dashboard
-
-เป้าหมาย:
-เปิดเว็บมาแล้วใช้ตัดสินใจได้เร็ว ไม่รก ไม่ต้องไล่ดูเมนูเยอะ
+รื้อหน้าเว็บเป็นหน้าเดียว:
+- Market Summary
+- Top Buy Opportunities
+- Portfolio Snapshot
+- AI Coach
+- Alerts
+- Portfolio Quick Input
