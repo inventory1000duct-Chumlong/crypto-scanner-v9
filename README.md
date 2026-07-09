@@ -1,9 +1,8 @@
-# Crypto Scanner Pro V33 — Morning Dashboard Edition
+# Crypto Scanner Pro V33.1 — Morning Dashboard Hotfix
 
-รื้อหน้าเว็บเป็นหน้าเดียว:
-- Market Summary
-- Top Buy Opportunities
-- Portfolio Snapshot
-- AI Coach
-- Alerts
-- Portfolio Quick Input
+แก้บั๊ก:
+- ลบ dependency จาก JavaScript เมนูเก่า
+- แก้ error Cannot set properties of null
+- ทำ frontend ใหม่ให้โหลดเฉพาะหน้า Morning Dashboard
+- Opportunities / AI Coach / Alerts แสดงผลจาก /api/morning โดยตรง
+- Portfolio ใช้ localStorage แบบง่ายและเสถียร
