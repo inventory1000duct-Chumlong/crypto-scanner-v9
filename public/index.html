@@ -10,7 +10,7 @@
 <header class="morning-header">
   <div>
     <h1>CRYPTO SCANNER PRO</h1>
-    <p>V33.1 Morning Dashboard Hotfix • เปิดเว็บแล้วเห็นสรุปตลาด เหรียญน่าสนใจ พอร์ต AI Coach และ Alerts ในหน้าเดียว</p>
+    <p>V33.2 Portfolio Chart + TP • เปิดเว็บแล้วเห็นสรุปตลาด เหรียญน่าสนใจ พอร์ต AI Coach และ Alerts ในหน้าเดียว</p>
     <small id="morningStatus">กำลังโหลด...</small>
   </div>
   <button onclick="loadMorning()">Refresh Morning</button>
@@ -54,7 +54,7 @@
     </div>
     <div id="portfolioSummary" class="summary">ยังไม่มีข้อมูลพอร์ต</div>
     <div id="portfolioCharts" class="chartgrid"></div>
-    <div id="portfolioBox" class="wrap"></div>
+    <div id="portfolioBox" class="wrap"></div><div class="portfolio-chart-layout"><div id="portfolioChartBox" class="chart-container">เลือกเหรียญในพอร์ต หรือเพิ่มเหรียญเพื่อดูกราฟแท่งเทียน</div><div id="tpPanelBox" class="tp-panel"></div></div>
   </section>
 
   <section id="hiddenSystem" style="display:none">
@@ -63,6 +63,6 @@
 </main>
 
 <footer>Decision Support Only • ไม่ใช่คำแนะนำการลงทุนหรือคำสั่งซื้อขายอัตโนมัติ</footer>
-<script src="/app-morning-hotfix.js?v=33.1.0"></script>
+<script src="/app-morning-hotfix.js?v=33.2.0"></script>
 </body>
 </html>

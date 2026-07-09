@@ -168,3 +168,34 @@ function init(){
   setInterval(loadMorning,120000);
 }
 document.addEventListener("DOMContentLoaded",init);
+
+
+let selectedPortfolioSymbol=null, chartTf="1h";
+async function loadPortfolioChart(symbol){
+  symbol=(symbol||selectedPortfolioSymbol||loadPortfolio()[0]?.symbol||"BTC").toUpperCase(); selectedPortfolioSymbol=symbol;
+  const box=$("portfolioChartBox"), panel=$("tpPanelBox"); if(!box||!panel)return;
+  box.innerHTML='<div class="empty">กำลังโหลดกราฟ '+esc(symbol)+'...</div>';
+  try{ const data=await api(`/api/portfolio/chart/${encodeURIComponent(symbol)}?tf=${encodeURIComponent(chartTf)}`,20000);
+    const pf=portfolioRows().find(x=>x.symbol===data.symbol); const levels={...data.levels, avg:pf?.avgPrice};
+    box.innerHTML=drawPortfolioCandles(data.candles,levels,data.symbol); renderTPPanel(data,levels,pf);
+  }catch(e){box.innerHTML='<div class="empty">โหลดกราฟไม่ได้: '+esc(e.message)+'</div>'; panel.innerHTML='';}
+}
+function drawPortfolioCandles(candles,levels,symbol){
+  const w=980,h=360,topH=285, vals=candles.flatMap(c=>[c.high,c.low]).concat(Object.values(levels).filter(v=>Number.isFinite(Number(v))).map(Number));
+  const min=Math.min(...vals)*0.997,max=Math.max(...vals)*1.003, y=v=>topH-16-((Number(v)-min)/(max-min||1))*(topH-34), step=(w-70)/candles.length, x=i=>48+i*step+step/2;
+  const maxVol=Math.max(...candles.map(c=>c.volume||0),1);
+  const grid=[0,.25,.5,.75,1].map(t=>`<line x1="42" y1="${18+t*(topH-36)}" x2="${w-16}" y2="${18+t*(topH-36)}" stroke="#17243a"/>`).join("");
+  const cs=candles.map((c,i)=>{const up=c.close>=c.open,color=up?"#22c55e":"#fb7185",cx=x(i),bw=Math.max(3,step*.55),top=y(Math.max(c.open,c.close)),bot=y(Math.min(c.open,c.close)),vh=((c.volume||0)/maxVol)*48;return `<line x1="${cx}" y1="${y(c.high)}" x2="${cx}" y2="${y(c.low)}" stroke="${color}" stroke-width="1.4"/><rect x="${cx-bw/2}" y="${top}" width="${bw}" height="${Math.max(2,bot-top)}" fill="${color}" rx="1"/><rect x="${cx-bw/2}" y="${topH+58-vh}" width="${bw}" height="${vh}" fill="${color}" opacity=".45"/>`;}).join("");
+  const last=candles.at(-1)?.close||0, levelList=[["TP3",levels.tp3,"#00e7c1"],["TP2",levels.tp2,"#3b82f6"],["TP1",levels.tp1,"#60a5fa"],["AVG",levels.avg,"#facc15"],["ENTRY",levels.entry,"#38bdf8"],["NOW",last,"#e6edf7"],["SL",levels.sl,"#fb7185"]].filter(x=>Number.isFinite(Number(x[1])));
+  const lines=levelList.map(([label,val,color])=>`<line x1="42" y1="${y(val)}" x2="${w-16}" y2="${y(val)}" stroke="${color}" stroke-dasharray="6 5" stroke-width="1.2"/><text x="${w-20}" y="${y(val)-5}" text-anchor="end" fill="${color}" font-size="12">${label} ${money(val,4)}</text>`).join("");
+  return `<div class="chart-title-row"><div><h3>${esc(symbol)} Candlestick + TP</h3><p>เส้น AVG / ENTRY / NOW / SL / TP แสดงบนกราฟ</p></div><div class="chart-live-badge">PORTFOLIO</div></div><svg class="portfolio-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><rect width="${w}" height="${h}" fill="#07101f"/>${grid}<text x="48" y="14" fill="#9fb3d9" font-size="12">${esc(symbol)} • Last ${money(last,4)}</text>${cs}${lines}<text x="48" y="${topH+18}" fill="#9fb3d9" font-size="12">Volume</text></svg>`;
+}
+function renderTPPanel(data,levels,pf){
+  const panel=$("tpPanelBox"); if(!panel)return; const now=Number(data.price||data.candles?.at(-1)?.close||0), qty=Number(pf?.qty||0), avg=Number(pf?.avgPrice||levels.avg||levels.entry||now), calc=t=>qty?(Number(t)-avg)*qty:null;
+  const rows=[["TP3",levels.tp3,"pnl-pos"],["TP2",levels.tp2,"pnl-pos"],["TP1",levels.tp1,"pnl-pos"],["ENTRY",levels.entry,""],["AVG",avg,""],["NOW",now,""],["SL",levels.sl,"pnl-neg"]];
+  panel.innerHTML='<h3>TP / SL Panel</h3>'+rows.map(([name,val,cls])=>`<div class="tp-line"><span>${name}</span><b class="${cls}">${money(val,4)}</b>${qty&&["TP1","TP2","TP3","SL"].includes(name)?`<small class="${calc(val)>=0?'pnl-pos':'pnl-neg'}">${money(calc(val),2)}</small>`:""}</div>`).join("")+`<div class="summary">Position: ${pf?`${esc(pf.symbol)} • ${fmt(qty,6)} เหรียญ • Avg ${money(avg,4)}`:"ยังไม่ได้เลือกเหรียญในพอร์ต"}</div>`;
+}
+const __oldRenderPortfolio=renderPortfolio;
+renderPortfolio=function(){__oldRenderPortfolio(); const rows=portfolioRows(), box=$("portfolioBox"); if(box&&rows.length){box.querySelectorAll("tr").forEach((tr,i)=>{if(i>0){const sym=rows[i-1]?.symbol; tr.style.cursor="pointer"; tr.title="คลิกเพื่อเปิดกราฟ "+sym; tr.onclick=()=>loadPortfolioChart(sym);}});} if(rows.length&&!selectedPortfolioSymbol)loadPortfolioChart(rows[0].symbol);}
+const __oldAddOrUpdatePortfolio=addOrUpdatePortfolio;
+addOrUpdatePortfolio=function(){__oldAddOrUpdatePortfolio(); const sym=($("pfSymbol")?.value||"").trim().toUpperCase(); if(sym)setTimeout(()=>loadPortfolioChart(sym),400);}
