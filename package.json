@@ -1,6 +1,6 @@
 {
-  "name": "crypto-scanner-v33-2-portfolio-chart-tp",
-  "version": "33.2.0",
+  "name": "crypto-scanner-v33-4-portfolio-chart-logic-fix",
+  "version": "33.4.0",
   "type": "module",
   "scripts": {
     "start": "node server.js"

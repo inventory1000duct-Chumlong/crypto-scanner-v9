@@ -7,7 +7,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
-const PRODUCT="Crypto Scanner Pro", VERSION="33.2.0", EDITION="Morning Dashboard Edition", BUILD="2026.07.06-V33.2-PORTFOLIO-CHART", API_VERSION="33.2.0-portfolio-chart-tp";
+const PRODUCT="Crypto Scanner Pro", VERSION="33.4.0", EDITION="Morning Dashboard Edition", BUILD="2026.07.06-V33.4-CHART-LOGIC", API_VERSION="33.4.0-portfolio-chart-logic-fix";
 const PORT=process.env.PORT||3000;
 const __filename=fileURLToPath(import.meta.url), __dirname=path.dirname(__filename);
 const app=express();
@@ -187,7 +187,7 @@ async function terminalPayload(limit=80){
  return payload;
 }
 async function healthOne(name,url){const st=Date.now();try{const r=await fetchText(url,8000);return{name,ok:r.ok,status:String(r.status),latencyMs:Date.now()-st}}catch(e){return{name,ok:false,status:e.message,latencyMs:Date.now()-st}}}
-app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V33.2 Portfolio Chart + TP",modules:["Daily Dashboard","Opportunities","AI Coach","Portfolio P/L","Decision Support","Alerts","Simple Workflow"],status:"Production",time:new Date().toISOString()}));
+app.get("/api/version",(req,res)=>res.json({product:PRODUCT,edition:EDITION,version:VERSION,apiVersion:API_VERSION,build:BUILD,backend:"Node.js",frontend:"V33.4 Portfolio Chart Logic Fix",modules:["Daily Dashboard","Opportunities","AI Coach","Portfolio P/L","Decision Support","Alerts","Simple Workflow"],status:"Production",time:new Date().toISOString()}));
 app.get("/api/health",async(req,res)=>{const services=await Promise.all([healthOne("CoinGecko",`${CG}/ping`),healthOne("Fear & Greed",FNG)]);res.json({ok:services.some(s=>s.ok),product:PRODUCT,edition:EDITION,version:API_VERSION,build:BUILD,time:new Date().toISOString(),cache:cacheMeta(),services})});
 app.get("/api/terminal",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"80",10)||80,20,100)))}catch(e){next(e)}});
 app.get("/api/scan",async(req,res,next)=>{try{res.json(await terminalPayload(clamp(parseInt(req.query.limit||"50",10)||50,10,100)))}catch(e){next(e)}});
@@ -312,7 +312,7 @@ app.get("/api/release",(req,res)=>res.json({
   version:API_VERSION,
   edition:EDITION,
   build:BUILD,
-  current:"V33.2 Portfolio Chart + TP",
+  current:"V33.4 Portfolio Chart Logic Fix",
   website:"https://web-production-03de0.up.railway.app",
   endpoints:["/api/version","/api/health","/api/scan?limit=50","/api/chart/BTC","/api/platform/health","/api/release"],
   deployChecklist:[
@@ -758,21 +758,52 @@ app.get("/api/morning",async(req,res)=>{
 });
 
 
+
 app.get("/api/portfolio/chart/:symbol",async(req,res)=>{
   try{
-    const symbol=String(req.params.symbol||"BTC").toUpperCase(), tf=String(req.query.tf||"1h");
+    const symbol=String(req.params.symbol||"BTC").toUpperCase();
+    const tf=String(req.query.tf||"1h");
     const payload=await terminalPayload(120);
     const row=(payload.rows||[]).find(x=>x.symbol===symbol)||payload.rows?.[0];
     if(!row)return res.status(404).json({ok:false,error:"symbol not found"});
-    const now=Date.now(), base=+row.price||1, tfMs={"1m":60000,"5m":300000,"15m":900000,"1h":3600000,"4h":14400000,"1D":86400000}[tf]||3600000;
-    let prev=base*(1-(row.change24h||0)/100), candles=[];
-    for(let i=0;i<90;i++){
-      const wave=Math.sin(i/5.3)*0.018+Math.cos(i/13.7)*0.012, close=base*(1+wave), open=prev, spread=base*0.008*(.5+Math.abs(Math.sin(i)));
-      candles.push({time:new Date(now-(90-i-1)*tfMs).toISOString(),open:round(open,8),high:round(Math.max(open,close)+spread,8),low:round(Math.max(0.00000001,Math.min(open,close)-spread),8),close:round(close,8),volume:Math.round((row.volume||1000000)*(0.5+Math.abs(Math.sin(i))*0.8))});
-      prev=close;
+    const now=Date.now();
+    const base=+row.price||1;
+    const tfMs={"15m":900000,"1h":3600000,"4h":14400000,"1D":86400000}[tf]||3600000;
+    const count=96;
+    const change24=(row.change24h||0)/100;
+    const trendPerBar=change24/Math.max(24,count/4);
+    const vol=Math.max(0.0025,Math.min(0.035,Math.abs(row.volatility||3)/100*0.32));
+    const seed=symbol.split("").reduce((s,c)=>s+c.charCodeAt(0),0);
+    let close=base/(1+change24||1);
+    const candles=[];
+    for(let i=0;i<count;i++){
+      const cyc=Math.sin((i+seed)/7.2)*vol*0.35 + Math.cos((i+seed)/17.5)*vol*0.18;
+      const micro=Math.sin((i+seed)*2.37)*vol*0.12;
+      const drift=trendPerBar + cyc*0.08 + micro*0.05;
+      const open=close;
+      close=Math.max(0.00000001, open*(1+drift));
+      const range=Math.max(base*0.0015,Math.abs(close-open)*1.8 + base*vol*(0.08+Math.abs(Math.sin(i+seed))*0.12));
+      const high=Math.max(open,close)+range;
+      const low=Math.max(0.00000001,Math.min(open,close)-range);
+      const volume=Math.round((row.volume||1000000)*(0.35+Math.abs(Math.sin((i+seed)/3.2))*0.75));
+      candles.push({
+        time:new Date(now-(count-i-1)*tfMs).toISOString(),
+        open:round(open,8),high:round(high,8),low:round(low,8),close:round(close,8),volume
+      });
+    }
+    const ratio=base/(candles[candles.length-1].close||base);
+    for(const c of candles){
+      c.open=round(c.open*ratio,8); c.high=round(c.high*ratio,8);
+      c.low=round(c.low*ratio,8); c.close=round(c.close*ratio,8);
     }
     candles[candles.length-1].close=round(base,8);
-    res.json({ok:true,version:API_VERSION,symbol:row.symbol,name:row.name,tf,price:row.price,levels:{entry:row.entryHigh,sl:row.sl,tp1:row.tp1,tp2:row.tp2,tp3:row.tp3},candles,time:new Date().toISOString()});
+    res.json({
+      ok:true,version:API_VERSION,symbol:row.symbol,name:row.name,tf,price:base,
+      marketLevels:{entry:row.entryHigh,sl:row.sl,tp1:row.tp1,tp2:row.tp2,tp3:row.tp3},
+      candles,time:new Date().toISOString(),
+      source:"market-snapshot-derived-ohlc",
+      realtime:false
+    });
   }catch(e){res.status(500).json({ok:false,error:e.message,version:API_VERSION})}
 });
 
